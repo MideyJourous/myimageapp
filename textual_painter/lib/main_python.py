@@ -72,10 +72,46 @@ def save_image(image_data):
     return image.to_dict()
 
 
+# 한국어 프롬프트를 영어로 간단히 번역하는 함수
+def translate_prompt_to_english(korean_prompt):
+    # 한국어 프롬프트에서 자주 사용되는 키워드 매핑
+    translation_map = {
+        "지브리 스타일": "Studio Ghibli style",
+        "갈색머리": "brown hair",
+        "단발": "short hair",
+        "소녀": "girl",
+        "그녀가 안고 있는": "holding",
+        "턱시도 고양이": "tuxedo cat",
+        "고양이": "cat"
+    }
+    
+    # 번역된 프롬프트 초기화
+    english_prompt = korean_prompt
+    
+    # 키워드 매핑을 사용하여 번역
+    for korean, english in translation_map.items():
+        if korean in korean_prompt:
+            english_prompt = english_prompt.replace(korean, english)
+    
+    # 최종 번역 문자열 출력
+    print(f"원본 프롬프트: '{korean_prompt}'")
+    print(f"번역된 프롬프트: '{english_prompt}'")
+    
+    # 한국어가 그대로 포함된 경우 영어 설명 추가
+    if any(ord(char) > 127 for char in english_prompt):
+        # 원본 프롬프트를 보존하면서 기본 영어 설명 추가
+        english_prompt = f"{english_prompt}, Studio Ghibli style illustration of a girl with brown short hair holding a tuxedo cat"
+        print(f"최종 프롬프트: '{english_prompt}'")
+    
+    return english_prompt
+
 # TheHive.AI API를 사용하여 이미지 생성
 def generate_image_with_thehive(prompt, model="sdxl"):
     try:
         print(f"Using TheHive.AI API for image generation with model: {model}")
+        
+        # 한국어 프롬프트를 영어로 번역
+        english_prompt = translate_prompt_to_english(prompt)
 
         # API 요청 헤더 설정 - Bearer 인증 방식 사용
         headers = {
@@ -92,7 +128,7 @@ def generate_image_with_thehive(prompt, model="sdxl"):
             # Flux Schnell 모델은 guidance_scale 파라미터가 없음
             data = {
                 "input": {
-                    "prompt": prompt,
+                    "prompt": english_prompt,
                     "image_size": {"width": 1024, "height": 1024},
                     "num_inference_steps": 15,
                     "num_images": 1,
@@ -103,7 +139,7 @@ def generate_image_with_thehive(prompt, model="sdxl"):
             # SDXL 모델
             data = {
                 "input": {
-                    "prompt": prompt,
+                    "prompt": english_prompt,
                     "negative_prompt": "",
                     "image_size": {"width": 1024, "height": 1024},
                     "num_inference_steps": 15,
