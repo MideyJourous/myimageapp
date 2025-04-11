@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>텍스트 이미지 생성기</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="container mt-4">
+        <header class="text-center mb-4">
+            <h1>텍스트 이미지 생성기</h1>
+            <p class="lead">텍스트 설명을 입력하면 AI가 이미지를 생성합니다</p>
+        </header>
+
+        <ul class="nav nav-tabs" id="myTab" role="tablist">
+            <li class="nav-item" role="presentation">
+                <button class="nav-link active" id="generator-tab" data-bs-toggle="tab" data-bs-target="#generator" type="button" role="tab" aria-controls="generator" aria-selected="true">이미지 생성</button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link" id="gallery-tab" data-bs-toggle="tab" data-bs-target="#gallery" type="button" role="tab" aria-controls="gallery" aria-selected="false">갤러리</button>
+            </li>
+        </ul>
+
+        <div class="tab-content mt-3" id="myTabContent">
+            <!-- 이미지 생성 탭 -->
+            <div class="tab-pane fade show active" id="generator" role="tabpanel" aria-labelledby="generator-tab">
+                <div class="card shadow-sm">
+                    <div class="card-body">
+                        <h5 class="card-title">이미지 생성하기</h5>
+                        
+                        <form id="image-form">
+                            <div class="mb-3">
+                                <label for="prompt" class="form-label">이미지 설명</label>
+                                <textarea class="form-control" id="prompt" rows="4" placeholder="만들고 싶은 이미지를 자세히 설명해주세요..." required></textarea>
+                                <div class="form-text" id="char-count">0/1000</div>
+                            </div>
+                            <div class="d-grid">
+                                <button type="submit" class="btn btn-primary" id="generate-btn">이미지 생성하기</button>
+                            </div>
+                        </form>
+
+                        <div id="loading" class="text-center my-4 d-none">
+                            <div class="spinner-border text-primary" role="status">
+                                <span class="visually-hidden">로딩중...</span>
+                            </div>
+                            <p class="mt-2">이미지를 생성하고 있습니다. 잠시만 기다려주세요...</p>
+                        </div>
+
+                        <div id="error" class="alert alert-danger mt-3 d-none" role="alert"></div>
+
+                        <div id="result" class="mt-4 d-none">
+                            <h5 class="mb-3">생성된 이미지</h5>
+                            <div class="image-container text-center">
+                                <img id="generated-image" src="" alt="Generated Image" class="img-fluid rounded">
+                                <div class="mt-3">
+                                    <button id="save-btn" class="btn btn-success me-2">갤러리에 저장</button>
+                                    <a id="download-btn" href="" download="generated-image.png" class="btn btn-outline-primary" target="_blank">다운로드</a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 갤러리 탭 -->
+            <div class="tab-pane fade" id="gallery" role="tabpanel" aria-labelledby="gallery-tab">
+                <div class="card shadow-sm">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between align-items-center mb-4">
+                            <h5 class="card-title m-0">내 이미지 갤러리</h5>
+                            <button id="clear-gallery" class="btn btn-sm btn-outline-danger" style="display: none;">모두 삭제</button>
+                        </div>
+                        
+                        <div id="gallery-container" class="row row-cols-1 row-cols-md-2 row-cols-lg-3 g-4">
+                            <!-- 갤러리 이미지가 이곳에 추가됩니다 -->
+                        </div>
+                        
+                        <div id="empty-gallery" class="text-center py-5">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" fill="currentColor" class="bi bi-images text-muted mb-3" viewBox="0 0 16 16">
+                                <path d="M4.502 9a1.5 1.5 0 1 0 0-3 1.5 1.5 0 0 0 0 3"/>
+                                <path d="M14.002 13a2 2 0 0 1-2 2h-10a2 2 0 0 1-2-2V5A2 2 0 0 1 2 3a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2v8a2 2 0 0 1-1.998 2M14 2H4a1 1 0 0 0-1 1h9.002a2 2 0 0 1 2 2v7A1 1 0 0 0 15 11V3a1 1 0 0 0-1-1M2.002 4a1 1 0 0 0-1 1v8l2.646-2.354a.5.5 0 0 1 .63-.062l2.66 1.773 3.71-3.71a.5.5 0 0 1 .577-.094l1.777 1.947V5a1 1 0 0 0-1-1h-10"/>
+                            </svg>
+                            <h5>저장된 이미지가 없습니다</h5>
+                            <p class="text-muted">이미지를 생성하고 저장해보세요</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <footer class="mt-5 pt-4 text-center text-muted border-top">
+            <p>© 2024 텍스트 이미지 생성기 | Powered by OpenAI DALL-E</p>
+        </footer>
+    </div>
+
+    <!-- 이미지 상세 모달 -->
+    <div class="modal fade" id="image-modal" tabindex="-1" aria-labelledby="imageModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="imageModalLabel">이미지 상세 정보</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <img id="modal-image" src="" alt="Detailed Image" class="img-fluid mb-3">
+                    <h6>설명:</h6>
+                    <p id="modal-prompt"></p>
+                    <p class="text-muted small" id="modal-date"></p>
+                </div>
+                <div class="modal-footer">
+                    <a id="modal-download" href="" class="btn btn-primary" download="image.png" target="_blank">다운로드</a>
+                    <button type="button" id="modal-delete" class="btn btn-danger" data-id="">삭제</button>
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">닫기</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 확인 모달 -->
+    <div class="modal fade" id="confirm-modal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="confirm-title">확인</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body" id="confirm-message">
+                    정말로 이 작업을 수행하시겠습니까?
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">취소</button>
+                    <button type="button" class="btn btn-danger" id="confirm-button">확인</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="app.js"></script>
+</body>
+</html>
