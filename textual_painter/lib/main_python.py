@@ -51,7 +51,7 @@ THEHIVE_API_KEY = os.environ.get('THEHIVE_API_KEY')
 
 # TheHive.AI API 설정 - v3 API 사용
 THEHIVE_API_URL = "https://api.thehive.ai/api/v3/hive/sdxl-enhanced"
-THEHIVE_FLUX_API_URL = "https://api.thehive.ai/api/v3/hive/flux-schnell"
+THEHIVE_FLUX_API_URL = "https://api.thehive.ai/api/v3/hive/flux-schnell-enhanced"
 
 
 # 이미지 데이터 저장 및 불러오기 함수
@@ -85,21 +85,33 @@ def generate_image_with_thehive(prompt, model="sdxl"):
 
         # 모델 선택 및 API 엔드포인트 결정
         api_url = THEHIVE_API_URL
+        
+        # 새로운 API v3 형식에 맞게 요청 데이터 구성
         if model.lower() == "flux-schnell":
             api_url = THEHIVE_FLUX_API_URL
-
-        # 새로운 API v3 형식에 맞게 요청 데이터 구성
-        data = {
-            "input": {
-                "prompt": prompt,
-                "negative_prompt": "",
-                "image_size": {"width": 1024, "height": 1024},
-                "num_inference_steps": 15,
-                "guidance_scale": 3.5,
-                "num_images": 1,
-                "output_format": "png"
+            # Flux Schnell 모델은 guidance_scale 파라미터가 없음
+            data = {
+                "input": {
+                    "prompt": prompt,
+                    "image_size": {"width": 1024, "height": 1024},
+                    "num_inference_steps": 15,
+                    "num_images": 1,
+                    "output_format": "png"
+                }
             }
-        }
+        else:
+            # SDXL 모델
+            data = {
+                "input": {
+                    "prompt": prompt,
+                    "negative_prompt": "",
+                    "image_size": {"width": 1024, "height": 1024},
+                    "num_inference_steps": 15,
+                    "guidance_scale": 3.5,
+                    "num_images": 1,
+                    "output_format": "png"
+                }
+            }
 
         # API 요청
         response = requests.post(api_url, headers=headers, json=data)
