@@ -28,6 +28,7 @@ class Image(db.Model):
     id = db.Column(db.String(50), primary_key=True)
     prompt = db.Column(db.Text, nullable=False)
     image_url = db.Column(db.String(500), nullable=False)
+    model = db.Column(db.String(50), nullable=True)  # 'sdxl' 또는 'flux-schnell'
     created_at = db.Column(db.DateTime(timezone=True), server_default=func.now())
     
     def to_dict(self):
@@ -35,6 +36,7 @@ class Image(db.Model):
             'id': self.id,
             'prompt': self.prompt,
             'imageUrl': self.image_url,
+            'model': self.model or 'sdxl',  # 없으면 기본값 'sdxl'
             'createdAt': self.created_at.isoformat()
         }
 
@@ -58,7 +60,8 @@ def save_image(image_data):
     image = Image(
         id=image_data['id'],
         prompt=image_data['prompt'],
-        image_url=image_data['imageUrl']
+        image_url=image_data['imageUrl'],
+        model=image_data.get('model', 'sdxl')  # 모델 정보 저장 (기본값: sdxl)
     )
     db.session.add(image)
     db.session.commit()
@@ -187,6 +190,7 @@ def save_image_api():
         data = request.json
         prompt = data.get('prompt', '')
         url = data.get('url', '')
+        model = data.get('model', 'sdxl')  # 모델 정보 가져오기
         
         if not url or not prompt:
             return jsonify({"error": "URL과 설명이 필요합니다"}), 400
@@ -197,6 +201,7 @@ def save_image_api():
             "id": image_id,
             "prompt": prompt,
             "imageUrl": url,
+            "model": model,  # 모델 정보 추가
             "createdAt": datetime.now().isoformat()
         }
         
