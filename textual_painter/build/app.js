@@ -2,11 +2,19 @@
 
 // 테마 프롬프트
 const THEME_PROMPTS = {
-    'nature': '자연 풍경, 산과 숲, 아름다운 자연',
-    'fantasy': '판타지 세계, 마법, 신비로운 생명체',
-    'abstract': '추상적인 패턴, 형태, 현대 예술',
-    'space': '우주, 별, 행성, 은하계, 성운',
-    'cityscape': '도시 풍경, 건물, 야경, 도시 생활'
+    // 첫 번째 세트 (기본)
+    'nature': '자연 풍경, 산과 숲, 아름다운 자연, 푸른 강, 맑은 하늘',
+    'fantasy': '판타지 세계, 마법, 신비로운 생명체, 동화 같은 성, 마법의 숲',
+    'abstract': '추상적인 패턴, 형태, 현대 예술, 생동감 있는 색상, 기하학적 패턴',
+    'space': '우주, 별, 행성, 은하계, 성운, 우주 탐사, 심오한 우주',
+    'cityscape': '도시 풍경, 건물, 야경, 도시 생활, 현대적 도시, 고층 건물',
+    
+    // 두 번째 세트 (추가)
+    'portrait': '인물 사진, 자연스러운 포즈, 감정이 담긴 표정, 스튜디오 조명, 생생한 디테일',
+    'food': '음식 사진, 맛있는 요리, 고급 레스토랑 음식, 신선한 재료, 아름다운 플레이팅',
+    'animal': '동물 사진, 야생 동물, 귀여운 반려동물, 자연 서식지, 움직임이 담긴 순간',
+    'ocean': '바다 풍경, 청록색 바다, 하얀 모래 해변, 파도, 열대 섬, 수중 생물',
+    'art': '예술 작품, 클래식 미술, 유화 스타일, 미술관, 작품 전시, 예술적 질감'
 };
 
 // DOM 요소
@@ -105,6 +113,20 @@ document.addEventListener('DOMContentLoaded', () => {
             hideGallery();
         }
     });
+    
+    // 테마 네비게이션 버튼 요소
+    const themePrevBtn = document.getElementById('theme-prev');
+    const themeNextBtn = document.getElementById('theme-next');
+    
+    // 카드 세트 변수
+    let isFirstCardSet = true;
+    
+    // 테마 네비게이션 버튼 이벤트 등록
+    themePrevBtn.addEventListener('click', showPreviousCardSet);
+    themeNextBtn.addEventListener('click', showNextCardSet);
+    
+    // 초기 카드 세트 설정
+    updateCardSetVisibility();
 });
 
 // 서버와 로컬 스토리지 동기화
@@ -604,6 +626,56 @@ function selectThemeCard(card) {
     
     // 알림 표시
     showAlert(`'${themeType}' 테마가 선택되었습니다.`, 'info');
+}
+
+// 카드 세트 가시성 업데이트
+function updateCardSetVisibility() {
+    // 활성화 상태 및 블러 처리 클래스 초기화
+    const activeSetCards = document.querySelectorAll('.active-set');
+    const blurredSetCards = document.querySelectorAll('.blurred-set');
+    
+    // 첫 번째 세트가 활성화된 경우
+    if (isFirstCardSet) {
+        // 첫 번째 세트만 보이도록
+        activeSetCards.forEach(card => {
+            card.style.display = 'block';
+            card.classList.remove('blurred-set');
+        });
+        
+        // 두 번째 세트는 숨김
+        blurredSetCards.forEach(card => {
+            card.style.display = 'none';
+        });
+    } else {
+        // 두 번째 세트가 활성화된 경우
+        activeSetCards.forEach(card => {
+            card.style.display = 'none';
+        });
+        
+        // 두 번째 세트는 보이도록 설정 (블러 처리됨)
+        blurredSetCards.forEach(card => {
+            card.style.display = 'block';
+            card.classList.add('active-set');
+        });
+    }
+}
+
+// 이전 카드 세트 표시
+function showPreviousCardSet() {
+    if (!isFirstCardSet) {
+        isFirstCardSet = true;
+        updateCardSetVisibility();
+        showAlert('첫 번째 테마 세트로 전환되었습니다.', 'info');
+    }
+}
+
+// 다음 카드 세트 표시
+function showNextCardSet() {
+    if (isFirstCardSet) {
+        isFirstCardSet = false;
+        updateCardSetVisibility();
+        showAlert('추가 테마 세트로 전환되었습니다. (블러 처리된 이미지)', 'info');
+    }
 }
 
 // 알림 표시
