@@ -13,7 +13,7 @@
         <!-- 헤더 및 갤러리 버튼 -->
         <header class="app-header">
             <div class="header-content">
-                <h1 class="app-title">텍스트 이미지 생성기</h1>
+                <div class="spacer"></div>
                 <button id="gallery-button" class="gallery-button" title="내 갤러리 보기">
                     <i class="bi bi-images"></i>
                 </button>
@@ -43,14 +43,8 @@
                             <textarea class="form-control" id="prompt" rows="3" placeholder="만들고 싶은 이미지를 자세히 설명해주세요..." required></textarea>
                             <div class="form-text" id="char-count">0/1000</div>
                         </div>
-                        <div class="mb-3">
-                            <label for="model" class="form-label">AI 모델 선택</label>
-                            <select class="form-select" id="model">
-                                <option value="sdxl" selected>SDXL - 고품질 이미지 생성</option>
-                                <option value="flux-schnell">Flux Schnell - 빠른 이미지 생성</option>
-                            </select>
-                            <div class="form-text">원하는 AI 모델을 선택하세요</div>
-                        </div>
+                        <!-- 모델 선택 옵션은 삭제되었지만 모델 값은 JavaScript에서 사용하기 위해 숨김 -->
+                        <input type="hidden" id="model" value="sdxl">
                         <div class="d-grid">
                             <button type="submit" class="btn btn-primary" id="generate-btn">이미지 생성하기</button>
                         </div>

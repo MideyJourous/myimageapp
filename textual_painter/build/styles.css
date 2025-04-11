@@ -33,16 +33,13 @@ body {
 
 .header-content {
     display: flex;
-    justify-content: space-between;
+    justify-content: flex-end;
     align-items: center;
     width: 100%;
 }
 
-.app-title {
-    font-size: 1.75rem;
-    font-weight: 700;
-    color: #e0e0e0;
-    margin: 0;
+.spacer {
+    flex-grow: 1;
 }
 
 .gallery-button {
