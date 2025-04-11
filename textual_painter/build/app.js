@@ -45,10 +45,18 @@ const STORAGE_KEY = 'text_to_image_gallery';
 let currentImage = null;
 let savedImagesCache = null;
 
+// 갤러리 관련 DOM 요소
+const galleryButton = document.getElementById('gallery-button');
+const galleryOverlay = document.getElementById('gallery-overlay');
+const closeGalleryButton = document.getElementById('close-gallery');
+
 // 초기화
 document.addEventListener('DOMContentLoaded', () => {
-    // 갤러리 탭 클릭 시 이미지 로드
-    document.getElementById('gallery-tab').addEventListener('click', loadGalleryImages);
+    // 갤러리 버튼 클릭 시 갤러리 표시
+    galleryButton.addEventListener('click', showGallery);
+    
+    // 갤러리 닫기 버튼 클릭 시 갤러리 숨기기
+    closeGalleryButton.addEventListener('click', hideGallery);
     
     // 문자 수 카운터 업데이트
     promptInput.addEventListener('input', updateCharCount);
@@ -70,6 +78,13 @@ document.addEventListener('DOMContentLoaded', () => {
     }).catch(() => {
         // 서버 오류시 로컬 이미지만 사용
         loadRandomImage();
+    });
+    
+    // ESC 키를 눌러 갤러리 닫기
+    document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape' && galleryOverlay.classList.contains('active')) {
+            hideGallery();
+        }
     });
 });
 
@@ -548,6 +563,34 @@ function showFallbackCircle() {
 function hideFallbackCircle() {
     fallbackCircle.classList.add('d-none');
     randomImage.style.display = 'block';
+}
+
+// 갤러리 오버레이 표시
+function showGallery() {
+    // 갤러리 이미지 로드
+    loadGalleryImages();
+    
+    // 갤러리 오버레이 표시
+    galleryOverlay.style.display = 'block';
+    // 약간의 지연 후 애니메이션 효과를 위해 active 클래스 추가
+    setTimeout(() => {
+        galleryOverlay.classList.add('active');
+        // 스크롤 방지
+        document.body.style.overflow = 'hidden';
+    }, 10);
+}
+
+// 갤러리 오버레이 숨기기
+function hideGallery() {
+    // 애니메이션 제거
+    galleryOverlay.classList.remove('active');
+    
+    // 트랜지션 후 완전히 숨기기
+    setTimeout(() => {
+        galleryOverlay.style.display = 'none';
+        // 스크롤 다시 허용
+        document.body.style.overflow = 'auto';
+    }, 300);
 }
 
 // 알림 표시

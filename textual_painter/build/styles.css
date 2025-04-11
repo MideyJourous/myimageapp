@@ -19,6 +19,59 @@ body {
     max-width: 1000px;
     margin: 0 auto;
     padding: 0 1rem;
+    position: relative;
+    overflow-x: hidden;
+}
+
+/* 헤더 스타일 */
+.app-header {
+    display: flex;
+    justify-content: center;
+    padding: 1.5rem 0 1rem;
+    position: relative;
+}
+
+.header-content {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    width: 100%;
+}
+
+.app-title {
+    font-size: 1.75rem;
+    font-weight: 700;
+    color: #e0e0e0;
+    margin: 0;
+}
+
+.gallery-button {
+    background-color: #2d2d2d;
+    color: #e0e0e0;
+    border: none;
+    border-radius: 50%;
+    width: 46px;
+    height: 46px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
+}
+
+.gallery-button:hover {
+    background-color: #4A6FDC;
+    transform: translateY(-2px);
+}
+
+.gallery-button i {
+    font-size: 1.5rem;
+}
+
+/* 메인 컨텐츠 영역 */
+.main-content {
+    margin-top: 1rem;
 }
 
 /* 이미지 디스플레이 영역 */
@@ -298,12 +351,64 @@ textarea.form-control {
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
 }
 
-/* 갤러리 스타일 */
+/* 갤러리 오버레이 스타일 */
+.gallery-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.85);
+    z-index: 100;
+    display: none;
+    opacity: 0;
+    transition: opacity 0.3s ease-in-out;
+    backdrop-filter: blur(8px);
+    overflow-y: auto;
+}
+
+.gallery-overlay.active {
+    display: block;
+    opacity: 1;
+}
+
+.gallery-content {
+    max-width: 1200px;
+    margin: 2rem auto;
+    padding: 1.5rem;
+    background-color: #1a1a1a;
+    border-radius: 12px;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+}
+
+.gallery-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1.5rem;
+    padding-bottom: 1rem;
+    border-bottom: 1px solid #333;
+}
+
+.gallery-title {
+    font-size: 1.5rem;
+    font-weight: 600;
+    margin: 0;
+    color: #e0e0e0;
+}
+
+.gallery-actions {
+    display: flex;
+    align-items: center;
+}
+
+/* 갤러리 이미지 스타일 */
 #gallery-container .card {
     cursor: pointer;
     overflow: hidden;
     height: 100%;
     background-color: #282828;
+    transition: transform 0.3s, box-shadow 0.3s;
 }
 
 #gallery-container .card:hover {
@@ -337,6 +442,10 @@ textarea.form-control {
 /* 빈 갤러리 상태 */
 #empty-gallery {
     color: #a0a0a0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
 }
 
 /* 모달 스타일 */
