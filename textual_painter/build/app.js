@@ -25,11 +25,7 @@ const galleryContainer = document.getElementById('gallery-container');
 const emptyGallery = document.getElementById('empty-gallery');
 const clearGalleryBtn = document.getElementById('clear-gallery');
 
-// 새로운 UI 요소
-const imageDisplay = document.getElementById('image-display');
-const randomImageContainer = document.getElementById('random-image-container');
-const randomImage = document.getElementById('random-image');
-const fallbackCircle = document.getElementById('fallback-circle');
+// 텍스트 디스플레이 UI 요소
 const largeTextDisplay = document.getElementById('large-text-display');
 const displayText = document.getElementById('display-text');
 
@@ -249,10 +245,7 @@ async function handleImageGeneration(e) {
         
         resultElement.classList.remove('d-none');
         
-        // 상단 이미지 영역에도 생성된 이미지 표시
-        randomImage.src = data.url;
-        randomImage.alt = prompt;
-        hideFallbackCircle();
+        // 상단 이미지 영역 코드 제거
         
     } catch (error) {
         showError(error);
@@ -440,10 +433,7 @@ function deleteImage(imageId) {
     // 갤러리 다시 로드
     loadGalleryImages();
     
-    // 상단 이미지 업데이트 (삭제된 이미지가 표시되고 있었다면)
-    if (randomImage.src === imageToDelete?.imageUrl) {
-        loadRandomImage(); // 다른 랜덤 이미지로 교체
-    }
+    // 상단 이미지 표시 관련 코드 제거
     
     // 서버에서도 삭제 요청 (백엔드 API가 있을 경우)
     if (imageToDelete) {
@@ -486,8 +476,7 @@ function clearGallery() {
     localStorage.removeItem(STORAGE_KEY);
     savedImagesCache = [];
     
-    // 상단 이미지 표시 초기화
-    showFallbackCircle();
+    // 상단 이미지 초기화 코드 제거
     
     // 갤러리 UI 업데이트
     loadGalleryImages();
@@ -524,9 +513,6 @@ function showLargeTextDisplay() {
     // 텍스트 표시 업데이트
     updateDisplayText();
     
-    // 이미지 컨테이너 숨기기
-    randomImageContainer.style.display = 'none';
-    
     // 텍스트 디스플레이 표시
     largeTextDisplay.classList.remove('d-none');
     largeTextDisplay.classList.add('active');
@@ -541,9 +527,6 @@ function hideLargeTextDisplay() {
     largeTextDisplay.classList.remove('active');
     setTimeout(() => {
         largeTextDisplay.classList.add('d-none');
-        
-        // 이미지 컨테이너 다시 표시
-        randomImageContainer.style.display = 'flex';
     }, 300);
     
     // 입력 변경 이벤트 제거
