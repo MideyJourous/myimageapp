@@ -85,9 +85,9 @@ body {
 
 .theme-cards-container {
     display: flex;
-    padding: 2rem 0 1rem;
+    padding: 2rem 0 2.5rem; /* 아래쪽 패딩 증가 (반원 효과 고려) */
     position: relative;
-    height: 590px; /* 더 큰 높이로 조정 (카드 세로 길이 증가에 맞춤) */
+    height: 650px; /* 세미 써클을 위한 더 큰 높이 */
     overflow-x: auto;
     scroll-behavior: smooth;
     -webkit-overflow-scrolling: touch;
@@ -95,6 +95,9 @@ body {
     -ms-overflow-style: none; /* IE/Edge에서 스크롤바 숨김 */
     cursor: grab; /* 손 모양 커서로 변경하여 드래그 가능함을 표시 */
     user-select: none; /* 텍스트 선택 방지 */
+    overflow-y: hidden; /* 수직 스크롤 방지 */
+    perspective: 1000px; /* 3D 효과를 위한 원근감 추가 */
+    align-items: center; /* 카드를 수직 중앙에 배치 */
 }
 
 .theme-cards-container:active {
@@ -113,9 +116,11 @@ body {
     position: relative; /* absolute 대신 relative 사용 */
     transition: all 0.5s ease;
     cursor: pointer;
-    transform-origin: bottom center;
+    transform-origin: center center; /* 중앙을 기준으로 변형 */
     flex-shrink: 0; /* 축소 방지 */
     display: inline-block;
+    will-change: transform; /* 변환 최적화 */
+    transform-style: preserve-3d; /* 3D 변형 스타일 유지 */
 }
 
 /* 활성/비활성 세트 스타일 */

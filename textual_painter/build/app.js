@@ -193,14 +193,26 @@ document.addEventListener('DOMContentLoaded', () => {
             const cardCenter = cardLeft + (card.offsetWidth / 2);
             
             // 중앙으로부터의 거리 계산
-            const distanceFromCenter = Math.abs(cardCenter - scrollPosition - containerCenter);
+            const distanceFromCenter = cardCenter - scrollPosition - containerCenter;
+            const absDistance = Math.abs(distanceFromCenter);
             const maxDistance = containerCenter + (card.offsetWidth / 2);
             
             // 스케일 계산 (중앙에 가까울수록 큰 스케일)
-            const scale = Math.max(0.7, 1 - (distanceFromCenter / maxDistance) * 0.3);
+            const scale = Math.max(0.7, 1 - (absDistance / maxDistance) * 0.3);
             
-            // 효과 적용
-            card.style.transform = `scale(${scale})`;
+            // Y축 위치 계산 (반원 형태로 만들기 위해)
+            // 중앙에서 멀어질수록 아래로 내려가는 효과
+            const yOffset = Math.pow(absDistance / maxDistance, 2) * 60;
+            
+            // 회전 효과 (중앙에서 멀어질수록 기울어짐)
+            const rotate = (distanceFromCenter / maxDistance) * 15; // 양수면 오른쪽, 음수면 왼쪽으로 기울임
+            
+            // Z-index 설정 (중앙에 가까울수록 높은 z-index)
+            const zIndex = Math.round(100 - absDistance / 10);
+            card.style.zIndex = zIndex;
+            
+            // 효과 적용 (스케일, Y축 이동, 회전)
+            card.style.transform = `translateY(${yOffset}px) rotate(${rotate}deg) scale(${scale})`;
             card.style.opacity = Math.max(0.7, scale);
         });
     }
