@@ -88,12 +88,12 @@ body {
     align-items: flex-end; /* 모든 카드가 하단에 정렬 */
     padding: 2rem 0 1rem;
     position: relative;
-    height: 300px; /* 높이 증가 */
+    height: 350px; /* 높이 추가 증가 */
 }
 
 .theme-card {
-    width: 170px; /* 카드 너비 증가 */
-    height: 220px; /* 카드 높이 증가 */
+    width: 210px; /* 카드 너비 추가 증가 */
+    height: 270px; /* 카드 높이 추가 증가 */
     margin: 0 -5px; /* 겹쳐지는 효과 */
     position: absolute;
     transition: all 0.3s ease;
@@ -102,24 +102,74 @@ body {
     z-index: 1;
 }
 
-.theme-card:nth-child(1) {
+/* 테마 네비게이션 버튼 */
+.theme-nav-btn {
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    z-index: 10;
+    width: 48px;
+    height: 48px;
+    border-radius: 50%;
+    background-color: rgba(0, 0, 0, 0.5);
+    border: 2px solid rgba(255, 255, 255, 0.2);
+    color: white;
+    font-size: 1.5rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    box-shadow: 0 0 15px rgba(0, 0, 0, 0.3);
+}
+
+.theme-nav-btn:hover {
+    background-color: rgba(74, 111, 220, 0.7);
+    transform: translateY(-50%) scale(1.1);
+}
+
+.theme-nav-prev {
+    left: 10px;
+}
+
+.theme-nav-next {
+    right: 10px;
+}
+
+/* 활성/비활성 세트 스타일 */
+.active-set {
+    display: block;
+}
+
+.blurred-set {
+    display: none;
+}
+
+/* 블러 세트가 활성화될 때 */
+.blurred-set.active-set {
+    display: block;
+    filter: blur(3px);
+}
+
+/* 활성화된 카드 세트의 배치 */
+.active-set:nth-child(2) {
     transform: translateX(-280px) rotate(-20deg) scale(0.85);
 }
 
-.theme-card:nth-child(2) {
+.active-set:nth-child(3) {
     transform: translateX(-140px) rotate(-10deg) scale(0.9);
 }
 
-.theme-card:nth-child(3) {
+.active-set:nth-child(4) {
     transform: translateX(0) rotate(0) scale(1);
     z-index: 5;
 }
 
-.theme-card:nth-child(4) {
+.active-set:nth-child(5) {
     transform: translateX(140px) rotate(10deg) scale(0.9);
 }
 
-.theme-card:nth-child(5) {
+.active-set:nth-child(6) {
     transform: translateX(280px) rotate(20deg) scale(0.85);
 }
 
@@ -146,7 +196,7 @@ body {
 }
 
 .theme-image {
-    height: 75%; /* 이미지 영역 비율 증가 */
+    height: 80%; /* 이미지 영역 비율 추가 증가 */
     background-color: #3a3a3a;
     background-size: cover;
     background-position: center;

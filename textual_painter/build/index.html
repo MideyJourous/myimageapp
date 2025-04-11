@@ -23,39 +23,82 @@
             </div>
         </header>
         
-        <!-- 테마 선택 영역 -->
+        <!-- 테마 선택 영역 - 좌우 버튼 및 추가 이미지 포함 -->
         <div id="theme-selector" class="theme-selector">
             <div class="theme-cards-container">
-                <div class="theme-card" data-theme="nature">
+                <!-- 좌우 이동 버튼 -->
+                <button class="theme-nav-btn theme-nav-prev" id="theme-prev">
+                    <i class="bi bi-chevron-left"></i>
+                </button>
+                
+                <!-- 기존 5개 카드 -->
+                <div class="theme-card active-set" data-theme="nature" data-index="0">
                     <div class="theme-card-inner">
                         <div class="theme-image" style="background-image: url('https://images.unsplash.com/photo-1472214103451-9374bd1c798e?ixlib=rb-4.0.3&auto=format&fit=crop&w=300&q=80');"></div>
                         <div class="theme-title">자연</div>
                     </div>
                 </div>
-                <div class="theme-card" data-theme="fantasy">
+                <div class="theme-card active-set" data-theme="fantasy" data-index="1">
                     <div class="theme-card-inner">
                         <div class="theme-image" style="background-image: url('https://images.unsplash.com/photo-1518709268805-4e9042af9f23?ixlib=rb-4.0.3&auto=format&fit=crop&w=300&q=80');"></div>
                         <div class="theme-title">판타지</div>
                     </div>
                 </div>
-                <div class="theme-card" data-theme="abstract">
+                <div class="theme-card active-set" data-theme="abstract" data-index="2">
                     <div class="theme-card-inner">
                         <div class="theme-image" style="background-image: url('https://images.unsplash.com/photo-1543857778-c4a1a3e0b2eb?ixlib=rb-4.0.3&auto=format&fit=crop&w=300&q=80');"></div>
                         <div class="theme-title">추상</div>
                     </div>
                 </div>
-                <div class="theme-card" data-theme="space">
+                <div class="theme-card active-set" data-theme="space" data-index="3">
                     <div class="theme-card-inner">
                         <div class="theme-image" style="background-image: url('https://images.unsplash.com/photo-1462331940025-496dfbfc7564?ixlib=rb-4.0.3&auto=format&fit=crop&w=300&q=80');"></div>
                         <div class="theme-title">우주</div>
                     </div>
                 </div>
-                <div class="theme-card" data-theme="cityscape">
+                <div class="theme-card active-set" data-theme="cityscape" data-index="4">
                     <div class="theme-card-inner">
                         <div class="theme-image" style="background-image: url('https://images.unsplash.com/photo-1514565131-fce0801e5785?ixlib=rb-4.0.3&auto=format&fit=crop&w=300&q=80');"></div>
                         <div class="theme-title">도시</div>
                     </div>
                 </div>
+                
+                <!-- 추가 5개 카드 - 블러 처리 -->
+                <div class="theme-card blurred-set" data-theme="portrait" data-index="5">
+                    <div class="theme-card-inner">
+                        <div class="theme-image" style="background-image: url('https://images.unsplash.com/photo-1544005313-94ddf0286df2?ixlib=rb-4.0.3&auto=format&fit=crop&w=300&q=80');"></div>
+                        <div class="theme-title">인물</div>
+                    </div>
+                </div>
+                <div class="theme-card blurred-set" data-theme="food" data-index="6">
+                    <div class="theme-card-inner">
+                        <div class="theme-image" style="background-image: url('https://images.unsplash.com/photo-1504674900247-0877df9cc836?ixlib=rb-4.0.3&auto=format&fit=crop&w=300&q=80');"></div>
+                        <div class="theme-title">음식</div>
+                    </div>
+                </div>
+                <div class="theme-card blurred-set" data-theme="animal" data-index="7">
+                    <div class="theme-card-inner">
+                        <div class="theme-image" style="background-image: url('https://images.unsplash.com/photo-1474511320723-9a56873867b5?ixlib=rb-4.0.3&auto=format&fit=crop&w=300&q=80');"></div>
+                        <div class="theme-title">동물</div>
+                    </div>
+                </div>
+                <div class="theme-card blurred-set" data-theme="ocean" data-index="8">
+                    <div class="theme-card-inner">
+                        <div class="theme-image" style="background-image: url('https://images.unsplash.com/photo-1507525428034-b723cf961d3e?ixlib=rb-4.0.3&auto=format&fit=crop&w=300&q=80');"></div>
+                        <div class="theme-title">바다</div>
+                    </div>
+                </div>
+                <div class="theme-card blurred-set" data-theme="art" data-index="9">
+                    <div class="theme-card-inner">
+                        <div class="theme-image" style="background-image: url('https://images.unsplash.com/photo-1579783900882-c0d3dad7b119?ixlib=rb-4.0.3&auto=format&fit=crop&w=300&q=80');"></div>
+                        <div class="theme-title">미술</div>
+                    </div>
+                </div>
+                
+                <!-- 우측 이동 버튼 -->
+                <button class="theme-nav-btn theme-nav-next" id="theme-next">
+                    <i class="bi bi-chevron-right"></i>
+                </button>
             </div>
         </div>
 
@@ -124,9 +167,7 @@
             </div>
         </div>
 
-        <footer class="mt-5 pt-4 text-center text-muted border-top">
-            <p>© 2024 텍스트 이미지 생성기 | Powered by TheHive.AI (SDXL & Flux Schnell)</p>
-        </footer>
+        <!-- 푸터 제거 -->
     </div>
 
     <!-- 이미지 상세 모달 -->
