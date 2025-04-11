@@ -557,37 +557,20 @@ function updateDisplayText() {
 }
 
 // 랜덤 이미지 로드 함수
+// 이미지 디스플레이 영역 삭제로 빈 함수로 대체
 function loadRandomImage() {
+    // 이미지 표시 영역이 제거되어 더 이상 필요 없음
     savedImagesCache = getSavedImages();
-    
-    if (savedImagesCache.length > 0) {
-        // 랜덤 이미지 선택
-        const randomIndex = Math.floor(Math.random() * savedImagesCache.length);
-        const randomSavedImage = savedImagesCache[randomIndex];
-        
-        // 이미지 표시
-        randomImage.src = randomSavedImage.imageUrl;
-        randomImage.alt = randomSavedImage.prompt;
-        
-        // 이미지 로드 오류 처리
-        randomImage.onerror = showFallbackCircle;
-        randomImage.onload = hideFallbackCircle;
-    } else {
-        // 저장된 이미지가 없으면 서버에서 새 이미지 생성 대신 무지개 원 표시
-        showFallbackCircle();
-    }
 }
 
-// 무지개 색상의 원 표시
+// 무지개 색상의 원 표시 기능 제거
 function showFallbackCircle() {
-    randomImage.style.display = 'none';
-    fallbackCircle.classList.remove('d-none');
+    // 빈 함수로 유지 (호환성을 위해)
 }
 
-// 무지개 색상의 원 숨기기
+// 무지개 색상의 원 숨기기 기능 제거
 function hideFallbackCircle() {
-    fallbackCircle.classList.add('d-none');
-    randomImage.style.display = 'block';
+    // 빈 함수로 유지 (호환성을 위해)
 }
 
 // 갤러리 오버레이 표시
