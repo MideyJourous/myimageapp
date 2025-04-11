@@ -39,20 +39,36 @@ def generate_image():
             return jsonify({"error": "텍스트 설명이 필요합니다"}), 400
             
         # OpenAI API를 사용하여 이미지 생성
-        response = openai.images.generate(
-            model="dall-e-3",
-            prompt=prompt,
-            n=1,
-            size="1024x1024",
-            quality="standard"
-        )
-        
-        image_url = response.data[0].url
-        
-        return jsonify({"url": image_url})
+        try:
+            response = openai.images.generate(
+                model="dall-e-3",
+                prompt=prompt,
+                n=1,
+                size="1024x1024",
+                quality="standard"
+            )
+            
+            image_url = response.data[0].url
+            
+            return jsonify({"url": image_url})
+        except openai.APIError as api_err:
+            # OpenAI API 특정 오류 처리
+            error_message = str(api_err)
+            error_code = 500
+            
+            if "billing_hard_limit_reached" in error_message:
+                error_message = "API 사용량 한도에 도달했습니다. 관리자에게 문의하거나 잠시 후 다시 시도해주세요."
+                error_code = 402  # Payment Required
+            elif "rate_limit_exceeded" in error_message:
+                error_message = "API 요청 한도를 초과했습니다. 잠시 후 다시 시도해주세요."
+                error_code = 429  # Too Many Requests
+            
+            print(f"OpenAI API Error: {error_message}")
+            return jsonify({"error": error_message, "detail": str(api_err)}), error_code
+            
     except Exception as e:
         print(f"Error generating image: {e}")
-        return jsonify({"error": str(e)}), 500
+        return jsonify({"error": "이미지 생성 중 오류가 발생했습니다. 잠시 후 다시 시도해주세요.", "detail": str(e)}), 500
 
 @app.route('/api/images', methods=['GET'])
 def get_images():

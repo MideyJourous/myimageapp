@@ -91,12 +91,11 @@ async function handleImageGeneration(e) {
             body: JSON.stringify({ prompt })
         });
         
-        if (!response.ok) {
-            const data = await response.json();
-            throw new Error(data.error || '이미지 생성에 실패했습니다.');
-        }
-        
         const data = await response.json();
+        
+        if (!response.ok) {
+            throw data; // 오류 객체를 그대로 전달
+        }
         
         // 생성된 이미지 표시
         currentImage = {
@@ -114,7 +113,7 @@ async function handleImageGeneration(e) {
         resultElement.classList.remove('d-none');
         
     } catch (error) {
-        showError(error.message);
+        showError(error);
     } finally {
         generateBtn.disabled = false;
         loadingElement.classList.add('d-none');
@@ -123,7 +122,14 @@ async function handleImageGeneration(e) {
 
 // 오류 메시지 표시
 function showError(message) {
-    errorElement.textContent = message;
+    // 오류 세부 정보가 있으면 처리
+    if (typeof message === 'object' && message.error) {
+        const errorDetail = message.detail ? `<br><small class="text-muted">${message.detail}</small>` : '';
+        errorElement.innerHTML = `${message.error}${errorDetail}`;
+    } else {
+        errorElement.textContent = message;
+    }
+    
     errorElement.classList.remove('d-none');
 }
 
