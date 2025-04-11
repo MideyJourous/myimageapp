@@ -71,7 +71,7 @@ def save_image(image_data):
 def generate_image_with_thehive(prompt, model="sdxl"):
     try:
         headers = {
-            "Authorization": f"Bearer {THEHIVE_API_KEY}",
+            "Authorization": f"Token {THEHIVE_API_KEY}",
             "Content-Type": "application/json"
         }
         
