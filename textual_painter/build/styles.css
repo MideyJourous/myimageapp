@@ -85,9 +85,9 @@ body {
 
 .theme-cards-container {
     display: flex;
-    padding: 2rem 0 2.5rem; /* 아래쪽 패딩 증가 (반원 효과 고려) */
+    padding: 2rem 0 3rem; /* 아래쪽 패딩 증가 (반원 효과 고려) */
     position: relative;
-    height: 650px; /* 세미 써클을 위한 더 큰 높이 */
+    height: 700px; /* 더 큰 높이로 조정하여 반원 효과 강화 */
     overflow-x: auto;
     scroll-behavior: smooth;
     -webkit-overflow-scrolling: touch;
@@ -96,8 +96,9 @@ body {
     cursor: grab; /* 손 모양 커서로 변경하여 드래그 가능함을 표시 */
     user-select: none; /* 텍스트 선택 방지 */
     overflow-y: hidden; /* 수직 스크롤 방지 */
-    perspective: 1000px; /* 3D 효과를 위한 원근감 추가 */
-    align-items: center; /* 카드를 수직 중앙에 배치 */
+    perspective: 1200px; /* 더 강한 3D 효과를 위한 원근감 추가 */
+    align-items: flex-start; /* 카드를 위쪽에 정렬하여 반원형 효과 강화 */
+    padding-top: 80px; /* 상단 여백 추가하여 아래로 더 내려가는 효과 */
 }
 
 .theme-cards-container:active {

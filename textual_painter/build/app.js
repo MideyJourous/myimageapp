@@ -197,23 +197,33 @@ document.addEventListener('DOMContentLoaded', () => {
             const absDistance = Math.abs(distanceFromCenter);
             const maxDistance = containerCenter + (card.offsetWidth / 2);
             
+            // 상대적 거리 (0~1 사이 값)
+            const relativeDistance = Math.min(1, absDistance / maxDistance);
+            
             // 스케일 계산 (중앙에 가까울수록 큰 스케일)
-            const scale = Math.max(0.7, 1 - (absDistance / maxDistance) * 0.3);
+            const scale = Math.max(0.65, 1 - relativeDistance * 0.35);
             
             // Y축 위치 계산 (반원 형태로 만들기 위해)
-            // 중앙에서 멀어질수록 아래로 내려가는 효과
-            const yOffset = Math.pow(absDistance / maxDistance, 2) * 60;
+            // 포물선 효과를 강화: y = a * x^2 (a는 강도 계수)
+            const yOffset = Math.pow(relativeDistance, 2) * 80;
             
             // 회전 효과 (중앙에서 멀어질수록 기울어짐)
-            const rotate = (distanceFromCenter / maxDistance) * 15; // 양수면 오른쪽, 음수면 왼쪽으로 기울임
+            // 부호에 따라 회전 방향 결정 (왼쪽/오른쪽)
+            const rotate = (distanceFromCenter / maxDistance) * 20;
             
             // Z-index 설정 (중앙에 가까울수록 높은 z-index)
-            const zIndex = Math.round(100 - absDistance / 10);
+            const zIndex = Math.round(100 - relativeDistance * 50);
             card.style.zIndex = zIndex;
             
-            // 효과 적용 (스케일, Y축 이동, 회전)
-            card.style.transform = `translateY(${yOffset}px) rotate(${rotate}deg) scale(${scale})`;
-            card.style.opacity = Math.max(0.7, scale);
+            // X축 약간 이동 (비대칭 효과 추가)
+            // 중앙 카드는 움직이지 않고, 멀어질수록 약간 앞뒤로 이동
+            const xOffset = Math.sign(distanceFromCenter) * Math.pow(relativeDistance, 1.5) * 10;
+            
+            // 효과 적용 (X/Y축 이동, 회전, 스케일)
+            card.style.transform = `translateY(${yOffset}px) translateX(${xOffset}px) rotate(${rotate}deg) scale(${scale})`;
+            
+            // 중앙에서 멀수록 더 흐려지도록 불투명도 조정
+            card.style.opacity = Math.max(0.6, 1 - relativeDistance * 0.4);
         });
     }
     
