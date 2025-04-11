@@ -114,79 +114,103 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
     
-    // 테마 카드 컨테이너에 수평 스크롤 기능 추가
+    // 테마 카드 컨테이너 참조
     const themeCardsContainer = document.querySelector('.theme-cards-container');
     
-    // 드래그 스크롤 기능 구현
+    // 오류 해결을 위해 먼저 모든 변수 초기화
+    window.isFirstCardSet = undefined; // 더 이상 사용하지 않는 변수 undefined로 설정
+    
+    // 드래그 스크롤 기능 완전히 다시 구현
     let isDragging = false;
     let startX, scrollLeft;
     
-    // 마우스 이벤트 리스너
-    themeCardsContainer.addEventListener('mousedown', (e) => {
+    // 마우스 이벤트 핸들러
+    function onMouseDown(e) {
         isDragging = true;
         startX = e.pageX - themeCardsContainer.offsetLeft;
         scrollLeft = themeCardsContainer.scrollLeft;
         themeCardsContainer.style.cursor = 'grabbing';
-    });
+    }
     
-    themeCardsContainer.addEventListener('mouseleave', () => {
+    function onMouseUp() {
         isDragging = false;
         themeCardsContainer.style.cursor = 'grab';
-    });
+    }
     
-    themeCardsContainer.addEventListener('mouseup', () => {
+    function onMouseLeave() {
         isDragging = false;
         themeCardsContainer.style.cursor = 'grab';
-    });
+    }
     
-    themeCardsContainer.addEventListener('mousemove', (e) => {
+    function onMouseMove(e) {
         if (!isDragging) return;
         e.preventDefault();
         const x = e.pageX - themeCardsContainer.offsetLeft;
         const walk = (x - startX) * 2; // 스크롤 속도 조정
         themeCardsContainer.scrollLeft = scrollLeft - walk;
-    });
+    }
     
-    // 터치 이벤트 리스너 (모바일 지원)
-    themeCardsContainer.addEventListener('touchstart', (e) => {
+    // 터치 이벤트 핸들러
+    function onTouchStart(e) {
         isDragging = true;
         startX = e.touches[0].pageX - themeCardsContainer.offsetLeft;
         scrollLeft = themeCardsContainer.scrollLeft;
-    });
+    }
     
-    themeCardsContainer.addEventListener('touchend', () => {
+    function onTouchEnd() {
         isDragging = false;
-    });
+    }
     
-    themeCardsContainer.addEventListener('touchmove', (e) => {
+    function onTouchMove(e) {
         if (!isDragging) return;
         const x = e.touches[0].pageX - themeCardsContainer.offsetLeft;
         const walk = (x - startX) * 2;
         themeCardsContainer.scrollLeft = scrollLeft - walk;
-    });
+    }
     
-    // 모든 카드 표시 (블러된 것 포함)
+    // 이벤트 리스너 등록
+    themeCardsContainer.addEventListener('mousedown', onMouseDown);
+    themeCardsContainer.addEventListener('mouseup', onMouseUp);
+    themeCardsContainer.addEventListener('mouseleave', onMouseLeave);
+    themeCardsContainer.addEventListener('mousemove', onMouseMove);
+    themeCardsContainer.addEventListener('touchstart', onTouchStart);
+    themeCardsContainer.addEventListener('touchend', onTouchEnd);
+    themeCardsContainer.addEventListener('touchmove', onTouchMove);
+    
+    // 모든 카드 표시 (블러 효과 포함)
     document.querySelectorAll('.theme-card').forEach(card => {
         card.style.display = 'inline-block';
     });
     
-    // 스크롤 이벤트 애니메이션 효과 추가
-    themeCardsContainer.addEventListener('scroll', (e) => {
-        requestAnimationFrame(() => {
-            // 스크롤 위치에 따라 카드에 애니메이션 효과 적용
-            const scrollPosition = themeCardsContainer.scrollLeft;
-            document.querySelectorAll('.theme-card').forEach((card, index) => {
-                // 카드의 위치에 따라 스케일과 불투명도 효과 적용
-                const cardPosition = card.offsetLeft - scrollPosition;
-                const distanceFromCenter = Math.abs(cardPosition - (themeCardsContainer.offsetWidth / 2) + (card.offsetWidth / 2));
-                const maxDistance = themeCardsContainer.offsetWidth / 2;
-                const scale = Math.max(0.7, 1 - (distanceFromCenter / maxDistance) * 0.3);
-                
-                // 스케일 및 불투명도 애니메이션 적용
-                card.style.transform = `scale(${scale})`;
-                card.style.opacity = Math.max(0.6, scale);
-            });
+    // 스크롤 이벤트 애니메이션 효과
+    function updateCardsOnScroll() {
+        const scrollPosition = themeCardsContainer.scrollLeft;
+        const containerCenter = themeCardsContainer.offsetWidth / 2;
+        
+        document.querySelectorAll('.theme-card').forEach(card => {
+            // 카드의 중앙 위치 계산
+            const cardLeft = card.offsetLeft;
+            const cardCenter = cardLeft + (card.offsetWidth / 2);
+            
+            // 중앙으로부터의 거리 계산
+            const distanceFromCenter = Math.abs(cardCenter - scrollPosition - containerCenter);
+            const maxDistance = containerCenter + (card.offsetWidth / 2);
+            
+            // 스케일 계산 (중앙에 가까울수록 큰 스케일)
+            const scale = Math.max(0.7, 1 - (distanceFromCenter / maxDistance) * 0.3);
+            
+            // 효과 적용
+            card.style.transform = `scale(${scale})`;
+            card.style.opacity = Math.max(0.7, scale);
         });
+    }
+    
+    // 초기 스크롤 위치 애니메이션 적용
+    setTimeout(updateCardsOnScroll, 100);
+    
+    // 스크롤 이벤트에 애니메이션 효과 연결
+    themeCardsContainer.addEventListener('scroll', () => {
+        requestAnimationFrame(updateCardsOnScroll);
     });
 });
 
