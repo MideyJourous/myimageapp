@@ -72,10 +72,8 @@ document.addEventListener('DOMContentLoaded', () => {
         showAlert('프리미엄 구독 기능은 준비 중입니다. 곧 만나볼 수 있습니다!', 'warning');
     });
     
-    // 문자 수 카운터 업데이트
+    // 문자 수 카운터 업데이트 (텍스트 확대 효과 제거)
     promptInput.addEventListener('input', updateCharCount);
-    promptInput.addEventListener('focus', showLargeTextDisplay);
-    promptInput.addEventListener('blur', hideLargeTextDisplay);
     
     // 이벤트 리스너 등록
     imageForm.addEventListener('submit', handleImageGeneration);
@@ -602,8 +600,7 @@ function selectThemeCard(card) {
     // 문자 수 카운터 업데이트
     updateCharCount();
     
-    // 대형 텍스트 디스플레이 업데이트
-    updateDisplayText();
+    // 대형 텍스트 디스플레이 업데이트 제거
     
     // 알림 표시
     showAlert(`'${themeType}' 테마가 선택되었습니다.`, 'info');

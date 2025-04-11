@@ -88,12 +88,12 @@ body {
     align-items: flex-end; /* 모든 카드가 하단에 정렬 */
     padding: 2rem 0 1rem;
     position: relative;
-    height: 250px;
+    height: 300px; /* 높이 증가 */
 }
 
 .theme-card {
-    width: 140px;
-    height: 180px;
+    width: 170px; /* 카드 너비 증가 */
+    height: 220px; /* 카드 높이 증가 */
     margin: 0 -5px; /* 겹쳐지는 효과 */
     position: absolute;
     transition: all 0.3s ease;
@@ -103,11 +103,11 @@ body {
 }
 
 .theme-card:nth-child(1) {
-    transform: translateX(-240px) rotate(-20deg) scale(0.8);
+    transform: translateX(-280px) rotate(-20deg) scale(0.85);
 }
 
 .theme-card:nth-child(2) {
-    transform: translateX(-120px) rotate(-10deg) scale(0.9);
+    transform: translateX(-140px) rotate(-10deg) scale(0.9);
 }
 
 .theme-card:nth-child(3) {
@@ -116,11 +116,11 @@ body {
 }
 
 .theme-card:nth-child(4) {
-    transform: translateX(120px) rotate(10deg) scale(0.9);
+    transform: translateX(140px) rotate(10deg) scale(0.9);
 }
 
 .theme-card:nth-child(5) {
-    transform: translateX(240px) rotate(20deg) scale(0.8);
+    transform: translateX(280px) rotate(20deg) scale(0.85);
 }
 
 .theme-card-inner {
@@ -146,7 +146,7 @@ body {
 }
 
 .theme-image {
-    height: 70%;
+    height: 75%; /* 이미지 영역 비율 증가 */
     background-color: #3a3a3a;
     background-size: cover;
     background-position: center;
