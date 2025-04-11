@@ -44,13 +44,11 @@ class Image(db.Model):
 with app.app_context():
     db.create_all()
 
-# API 키 설정
-openai.api_key = os.environ.get('OPENAI_API_KEY')
+# TheHive.AI API 키 설정
 THEHIVE_API_KEY = os.environ.get('THEHIVE_API_KEY')
 
 # TheHive.AI API 설정
-# v2 API는 2023년부터 변경된 형식이 있을 수 있음
-THEHIVE_API_URL = "https://api.thehive.ai/api/v2/task/sync"
+THEHIVE_API_URL = "https://api.thehive.ai/api/v2/image/generations"
 
 # 이미지 데이터 저장 및 불러오기 함수
 def load_images():
@@ -71,44 +69,39 @@ def save_image(image_data):
 # TheHive.AI API를 사용하여 이미지 생성
 def generate_image_with_thehive(prompt, model="sdxl"):
     try:
+        print(f"Using TheHive.AI API for image generation with model: {model}")
+
         # API 요청 헤더 설정
         headers = {
-            "Authorization": f"Token {THEHIVE_API_KEY}",
+            "x-api-key": THEHIVE_API_KEY,  # 문서에 따라 x-api-key 헤더 사용
             "Content-Type": "application/json"
         }
         
-        print(f"Using TheHive.AI API key: {THEHIVE_API_KEY[:5]}... (hidden)")
-        
         # 모델 선택 (sdxl 또는 flux-schnell)
         if model.lower() == "flux-schnell":
+            endpoint = "https://api.thehive.ai/api/v2/image/generations"
             model_id = "flux-schnell"
-            model_version = "v1.0.0-beta"
         else:
-            model_id = "sdxl"
-            model_version = "v1.0.0"
+            endpoint = "https://api.thehive.ai/api/v2/image/generations"
+            model_id = "hive/sdxl-enhanced:1.0.0"
         
-        # API 요청 데이터 구성 
-        # TheHive.AI API v2 형식에 맞춤
+        # API 요청 데이터 구성 - 문서에 맞춰 수정
         data = {
             "prompt": prompt,
-            "models": [
-                {
-                    "name": model_id,
-                    "version": model_version,
-                    "params": {
-                        "image_width": 1024,
-                        "image_height": 1024
-                    }
-                }
-            ]
+            "negative_prompt": "",  # 필요에 따라 설정 가능
+            "width": 1024,
+            "height": 1024,
+            "model": model_id,
         }
         
+        # API 요청
         response = requests.post(
-            THEHIVE_API_URL,
+            endpoint,
             headers=headers,
             json=data
         )
         
+        # 상태 코드 확인
         if response.status_code != 200:
             error_message = f"TheHive.AI API Error: {response.status_code} - {response.text}"
             print(error_message)
@@ -117,33 +110,19 @@ def generate_image_with_thehive(prompt, model="sdxl"):
         # 응답 파싱
         result = response.json()
         
-        if "status" not in result or result["status"] != "success":
-            error_message = f"TheHive.AI API Error: {result.get('message', 'Unknown error')}"
-            print(error_message)
-            return None, error_message, 500
-        
         # 이미지 URL 추출
-        outputs = result.get("outputs", [])
-        if not outputs or "image" not in outputs[0]:
-            return None, "이미지를 생성할 수 없습니다.", 500
-        
-        image_data = outputs[0]["image"]
-        
-        # 이미지 데이터가 base64 형식인 경우 파일로 저장하고 URL 반환
-        if "base64" in image_data:
-            # 현재 구현에서는 base64 데이터를 직접 URL로 사용
-            # 실제 구현에서는 이미지를 저장하고 URL을 반환하는 것이 더 효율적일 수 있음
-            image_url = f"data:image/jpeg;base64,{image_data['base64']}"
+        try:
+            image_url = result['data'][0]['images'][0]
             return image_url, None, 200
-        elif "url" in image_data:
-            return image_data["url"], None, 200
-        else:
-            return None, "이미지 URL을 찾을 수 없습니다.", 500
+        except (KeyError, IndexError) as e:
+            return None, f"응답에서 이미지 URL을 찾을 수 없습니다: {str(e)}", 500
             
     except Exception as e:
         error_message = f"TheHive.AI API 호출 중 오류: {str(e)}"
         print(error_message)
         return None, error_message, 500
+
+
 
 # API 라우트
 @app.route('/api/generate-image', methods=['POST'])
@@ -166,6 +145,7 @@ def generate_image():
         try:
             print(f"Generating image with model: {selected_model}, prompt: '{prompt}'")
             
+            # TheHive.AI API로 이미지 생성
             image_url, error, status_code = generate_image_with_thehive(prompt, selected_model)
             
             if error:
