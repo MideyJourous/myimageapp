@@ -124,14 +124,17 @@ def generate_image_with_thehive(prompt, model="sdxl"):
                     if "image_b64" in outputs[0]:
                         image_url = f"data:image/png;base64,{outputs[0]['image_b64']}"
                         return image_url, None, 200
-                    # URL이 있는 경우
+                    # URL이 있는 경우 (키가 'url'일 수도 있고 'image_url'일 수도 있음)
+                    elif "url" in outputs[0]:
+                        image_url = outputs[0]["url"]
+                        return image_url, None, 200
                     elif "image_url" in outputs[0]:
                         image_url = outputs[0]["image_url"]
                         return image_url, None, 200
 
-            # 파싱 실패시 오류 메시지 반환
+            # 파싱 실패시 자세한 오류 메시지 반환
             print(f"응답 파싱 실패: {result}")
-            return None, "응답에서 이미지 URL을 찾을 수 없습니다", 500
+            return None, "응답에서 이미지 URL을 찾을 수 없습니다 (응답 형식 다름)", 500
 
         except (KeyError, IndexError) as e:
             print(f"응답 파싱 중 오류: {e}, 응답: {result}")
