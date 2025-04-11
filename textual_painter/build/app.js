@@ -186,6 +186,7 @@ document.addEventListener('DOMContentLoaded', () => {
     function updateCardsOnScroll() {
         const scrollPosition = themeCardsContainer.scrollLeft;
         const containerCenter = themeCardsContainer.offsetWidth / 2;
+        const maxRotation = 10; // 최대 회전각도 (10도)
         
         document.querySelectorAll('.theme-card').forEach(card => {
             // 카드의 중앙 위치 계산
@@ -201,15 +202,18 @@ document.addEventListener('DOMContentLoaded', () => {
             const relativeDistance = Math.min(1, absDistance / maxDistance);
             
             // 스케일 계산 (중앙에 가까울수록 큰 스케일)
-            const scale = Math.max(0.65, 1 - relativeDistance * 0.35);
+            const scale = Math.max(0.7, 1 - relativeDistance * 0.3);
             
             // Y축 위치 계산 (반원 형태로 만들기 위해)
-            // 포물선 효과를 강화: y = a * x^2 (a는 강도 계수)
-            const yOffset = Math.pow(relativeDistance, 2) * 80;
+            // 포물선 효과: y = a * x^2 (a는 강도 계수)
+            const yOffset = Math.pow(relativeDistance, 2) * 70;
             
             // 회전 효과 (중앙에서 멀어질수록 기울어짐)
-            // 부호에 따라 회전 방향 결정 (왼쪽/오른쪽)
-            const rotate = (distanceFromCenter / maxDistance) * 20;
+            // 중앙 카드(relativeDistance < 0.1)는 회전 없음, 아닌 경우 최대 10도 좌우 기울기
+            let rotate = 0;
+            if (relativeDistance > 0.1) {
+                rotate = Math.sign(distanceFromCenter) * Math.min(maxRotation, relativeDistance * maxRotation);
+            }
             
             // Z-index 설정 (중앙에 가까울수록 높은 z-index)
             const zIndex = Math.round(100 - relativeDistance * 50);
@@ -217,13 +221,25 @@ document.addEventListener('DOMContentLoaded', () => {
             
             // X축 약간 이동 (비대칭 효과 추가)
             // 중앙 카드는 움직이지 않고, 멀어질수록 약간 앞뒤로 이동
-            const xOffset = Math.sign(distanceFromCenter) * Math.pow(relativeDistance, 1.5) * 10;
+            const xOffset = Math.sign(distanceFromCenter) * Math.pow(relativeDistance, 1.2) * 12;
             
-            // 효과 적용 (X/Y축 이동, 회전, 스케일)
-            card.style.transform = `translateY(${yOffset}px) translateX(${xOffset}px) rotate(${rotate}deg) scale(${scale})`;
+            // 변환 효과 계산
+            let transform = '';
+            
+            // 중앙 카드 처리 (relativeDistance가 매우 작을 때)
+            if (relativeDistance < 0.1) {
+                // 중앙 카드는 Y축 변환만, 회전 없음
+                transform = `translateY(${yOffset}px) scale(${scale})`;
+            } else {
+                // 주변 카드는 Y축 변환, X축 변환, 회전, 스케일 모두 적용
+                transform = `translateY(${yOffset}px) translateX(${xOffset}px) rotate(${rotate}deg) scale(${scale})`;
+            }
+            
+            // 효과 적용
+            card.style.transform = transform;
             
             // 중앙에서 멀수록 더 흐려지도록 불투명도 조정
-            card.style.opacity = Math.max(0.6, 1 - relativeDistance * 0.4);
+            card.style.opacity = Math.max(0.65, 1 - relativeDistance * 0.35);
         });
     }
     

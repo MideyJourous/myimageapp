@@ -113,7 +113,7 @@ body {
 .theme-card {
     width: 294px; /* 1.4배 증가 210 * 1.4 (가로 크기는 그대로 유지) */
     height: 459px; /* 1.7배 증가 270 * 1.7 */
-    margin: 0 15px; /* 카드 간 간격 증가 */
+    margin: 0 20px; /* 카드 간 간격 더 늘림 - 다음 카드 일부가 더 잘 보이도록 */
     position: relative; /* absolute 대신 relative 사용 */
     transition: all 0.5s ease;
     cursor: pointer;
@@ -122,6 +122,7 @@ body {
     display: inline-block;
     will-change: transform; /* 변환 최적화 */
     transform-style: preserve-3d; /* 3D 변형 스타일 유지 */
+    backface-visibility: hidden; /* 더 부드러운 애니메이션을 위한 설정 */
 }
 
 /* 활성/비활성 세트 스타일 */
