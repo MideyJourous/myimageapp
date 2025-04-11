@@ -49,6 +49,7 @@ openai.api_key = os.environ.get('OPENAI_API_KEY')
 THEHIVE_API_KEY = os.environ.get('THEHIVE_API_KEY')
 
 # TheHive.AI API 설정
+# v2 API는 2023년부터 변경된 형식이 있을 수 있음
 THEHIVE_API_URL = "https://api.thehive.ai/api/v2/task/sync"
 
 # 이미지 데이터 저장 및 불러오기 함수
@@ -70,10 +71,13 @@ def save_image(image_data):
 # TheHive.AI API를 사용하여 이미지 생성
 def generate_image_with_thehive(prompt, model="sdxl"):
     try:
+        # API 요청 헤더 설정
         headers = {
             "Authorization": f"Token {THEHIVE_API_KEY}",
             "Content-Type": "application/json"
         }
+        
+        print(f"Using TheHive.AI API key: {THEHIVE_API_KEY[:5]}... (hidden)")
         
         # 모델 선택 (sdxl 또는 flux-schnell)
         if model.lower() == "flux-schnell":
@@ -83,13 +87,18 @@ def generate_image_with_thehive(prompt, model="sdxl"):
             model_id = "sdxl"
             model_version = "v1.0.0"
         
+        # API 요청 데이터 구성 
+        # TheHive.AI API v2 형식에 맞춤
         data = {
             "prompt": prompt,
             "models": [
                 {
                     "name": model_id,
                     "version": model_version,
-                    "params": {}
+                    "params": {
+                        "image_width": 1024,
+                        "image_height": 1024
+                    }
                 }
             ]
         }
