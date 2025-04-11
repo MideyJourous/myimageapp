@@ -228,14 +228,17 @@ function showImageDetails(image) {
 
 // 이미지 삭제 확인
 function confirmDeleteImage(imageId) {
+    // 모달 제목과 메시지 설정
     confirmTitle.textContent = '이미지 삭제';
-    confirmMessage.textContent = '이미지를 삭제하시겠습니까?';
+    confirmMessage.textContent = '이 이미지를 삭제하시겠습니까? 이 작업은 되돌릴 수 없습니다.';
     
+    // 확인 버튼 클릭 시 이벤트
     confirmButton.onclick = () => {
         deleteImage(imageId);
         confirmModal.hide();
     };
     
+    // 모달 표시
     confirmModal.show();
 }
 
