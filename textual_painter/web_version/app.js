@@ -3,6 +3,7 @@
 // DOM 요소
 const imageForm = document.getElementById('image-form');
 const promptInput = document.getElementById('prompt');
+const modelSelect = document.getElementById('model');
 const charCount = document.getElementById('char-count');
 const generateBtn = document.getElementById('generate-btn');
 const loadingElement = document.getElementById('loading');
@@ -70,6 +71,8 @@ async function handleImageGeneration(e) {
     e.preventDefault();
     
     const prompt = promptInput.value.trim();
+    const selectedModel = modelSelect.value; // 선택된 모델 가져오기
+    
     if (!prompt) {
         showError('이미지 설명을 입력해주세요.');
         return;
@@ -82,13 +85,20 @@ async function handleImageGeneration(e) {
     resultElement.classList.add('d-none');
     
     try {
-        // API 요청
+        // 선택된 모델 기반 로딩 메시지 업데이트
+        const modelName = selectedModel === 'flux-schnell' ? 'Flux Schnell' : 'SDXL';
+        loadingElement.querySelector('p').textContent = `${modelName} 모델로 이미지를 생성하고 있습니다. 잠시만 기다려주세요...`;
+        
+        // API 요청 - 선택된 모델 정보 포함
         const response = await fetch('/api/generate-image', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
             },
-            body: JSON.stringify({ prompt })
+            body: JSON.stringify({ 
+                prompt,
+                model: selectedModel  // 선택된 모델 전송
+            })
         });
         
         const data = await response.json();
@@ -102,6 +112,7 @@ async function handleImageGeneration(e) {
             id: Date.now().toString(),
             prompt,
             imageUrl: data.url,
+            model: selectedModel, // 사용된 모델 저장
             createdAt: new Date().toISOString()
         };
         
@@ -117,6 +128,8 @@ async function handleImageGeneration(e) {
     } finally {
         generateBtn.disabled = false;
         loadingElement.classList.add('d-none');
+        // 기본 로딩 메시지로 복원
+        loadingElement.querySelector('p').textContent = "이미지를 생성하고 있습니다. 잠시만 기다려주세요...";
     }
 }
 
@@ -190,6 +203,11 @@ function createImageCard(image) {
     const col = document.createElement('div');
     col.className = 'col';
     
+    // 모델 정보 가져오기 (없으면 SDXL로 기본값 설정)
+    const modelName = image.model ? 
+                      (image.model === 'flux-schnell' ? 'Flux Schnell' : 'SDXL') : 
+                      'SDXL';
+    
     const card = document.createElement('div');
     card.className = 'card h-100 position-relative';
     card.innerHTML = `
@@ -197,6 +215,7 @@ function createImageCard(image) {
         <div class="gallery-caption">
             <h6>${image.prompt}</h6>
             <small>${formatDate(new Date(image.createdAt))}</small>
+            <small class="d-block text-info">모델: ${modelName}</small>
         </div>
     `;
     
@@ -211,9 +230,14 @@ function createImageCard(image) {
 
 // 이미지 상세 정보 모달 표시
 function showImageDetails(image) {
+    // 모델 정보 가져오기 (없으면 SDXL로 기본값 설정)
+    const modelName = image.model ? 
+                     (image.model === 'flux-schnell' ? 'Flux Schnell' : 'SDXL') : 
+                     'SDXL';
+    
     modalImage.src = image.imageUrl;
     modalPrompt.textContent = image.prompt;
-    modalDate.textContent = `생성일: ${formatDate(new Date(image.createdAt))}`;
+    modalDate.textContent = `생성일: ${formatDate(new Date(image.createdAt))} | 모델: ${modelName}`;
     modalDownload.href = image.imageUrl;
     modalDelete.dataset.id = image.id;
     

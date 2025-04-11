@@ -140,15 +140,21 @@ def generate_image():
         data = request.json
         prompt = data.get('prompt', '')
         
+        # 클라이언트에서 전송한 모델 정보 수신 (기본값: sdxl)
+        selected_model = data.get('model', 'sdxl')
+        
+        # 허용된 모델 확인 (sdxl 또는 flux-schnell만 허용)
+        if selected_model not in ['sdxl', 'flux-schnell']:
+            selected_model = 'sdxl'  # 유효하지 않으면 기본값 사용
+        
         if not prompt:
             return jsonify({"error": "텍스트 설명이 필요합니다"}), 400
             
         # TheHive.AI API를 사용하여 이미지 생성
         try:
-            # 'flux-schnell' 또는 'sdxl' 모델 선택 가능 (기본값: sdxl)
-            model = "sdxl"  # 기본 모델로 SDXL 사용
+            print(f"Generating image with model: {selected_model}, prompt: '{prompt}'")
             
-            image_url, error, status_code = generate_image_with_thehive(prompt, model)
+            image_url, error, status_code = generate_image_with_thehive(prompt, selected_model)
             
             if error:
                 return jsonify({"error": error}), status_code
