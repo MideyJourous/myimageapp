@@ -28,8 +28,6 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('텍스트 이미지 생성기'),
-        centerTitle: true,
         elevation: 0,
         bottom: TabBar(
           controller: _tabController,
@@ -50,7 +48,7 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
         children: const [
           // 이미지 생성 탭
           ImageGeneratorWidget(),
-          
+
           // 갤러리 탭
           ImageGalleryWidget(),
         ],

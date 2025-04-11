@@ -27,7 +27,7 @@ class _ImageGeneratorWidgetState extends State<ImageGeneratorWidget> {
   Widget build(BuildContext context) {
     final imageProvider = Provider.of<ImageGeneratorProvider>(context);
     final theme = Theme.of(context);
-    
+
     return SingleChildScrollView(
       child: Padding(
         padding: const EdgeInsets.all(16.0),
@@ -57,9 +57,9 @@ class _ImageGeneratorWidgetState extends State<ImageGeneratorWidget> {
                   setState(() {});
                 },
               ),
-              
+
               const SizedBox(height: 20),
-              
+
               // Error Message
               if (imageProvider.error != null)
                 Container(
@@ -73,9 +73,9 @@ class _ImageGeneratorWidgetState extends State<ImageGeneratorWidget> {
                     style: TextStyle(color: Colors.red[700]),
                   ),
                 ),
-              
+
               const SizedBox(height: 20),
-              
+
               // Generate Button
               ElevatedButton.icon(
                 onPressed: imageProvider.isLoading
@@ -85,7 +85,7 @@ class _ImageGeneratorWidgetState extends State<ImageGeneratorWidget> {
                           setState(() {
                             _isSaved = false;
                           });
-                          
+
                           await imageProvider.generateImage(_promptController.text);
                         }
                       },
@@ -114,9 +114,9 @@ class _ImageGeneratorWidgetState extends State<ImageGeneratorWidget> {
                   padding: const EdgeInsets.symmetric(vertical: 16),
                 ),
               ),
-              
+
               const SizedBox(height: 20),
-              
+
               // Loading Indicator
               if (imageProvider.isLoading)
                 Column(
@@ -133,7 +133,7 @@ class _ImageGeneratorWidgetState extends State<ImageGeneratorWidget> {
                     ),
                   ],
                 ),
-              
+
               // Generated Image
               if (imageProvider.generatedImageUrl != null)
                 Column(
@@ -202,7 +202,7 @@ class _ImageGeneratorWidgetState extends State<ImageGeneratorWidget> {
                             backgroundColor: _isSaved ? Colors.grey : Colors.green,
                           ),
                         ),
-                        
+
                         // Download Button
                         ElevatedButton.icon(
                           onPressed: () async {
@@ -229,7 +229,7 @@ class _ImageGeneratorWidgetState extends State<ImageGeneratorWidget> {
                             backgroundColor: Colors.blueAccent,
                           ),
                         ),
-                        
+
                         // Clear Button
                         IconButton(
                           onPressed: () {
