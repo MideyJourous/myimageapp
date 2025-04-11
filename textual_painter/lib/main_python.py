@@ -20,16 +20,18 @@ app.config['SQLALCHEMY_DATABASE_URI'] = os.environ.get('DATABASE_URL')
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 db = SQLAlchemy(app)
 
+
 # 이미지 모델 정의
 class Image(db.Model):
     __tablename__ = 'images'
-    
+
     id = db.Column(db.String(50), primary_key=True)
     prompt = db.Column(db.Text, nullable=False)
     image_url = db.Column(db.String(500), nullable=False)
     model = db.Column(db.String(50), nullable=True)  # 'sdxl' 또는 'flux-schnell'
-    created_at = db.Column(db.DateTime(timezone=True), server_default=func.now())
-    
+    created_at = db.Column(db.DateTime(timezone=True),
+                           server_default=func.now())
+
     def to_dict(self):
         return {
             'id': self.id,
@@ -39,6 +41,7 @@ class Image(db.Model):
             'createdAt': self.created_at.isoformat()
         }
 
+
 # 데이터베이스 테이블 생성
 with app.app_context():
     db.create_all()
@@ -46,13 +49,16 @@ with app.app_context():
 # TheHive.AI API 키 설정
 THEHIVE_API_KEY = os.environ.get('THEHIVE_API_KEY')
 
-# TheHive.AI API 설정
-THEHIVE_API_URL = "https://api.thehive.ai/api/v2/task/sync"
+# TheHive.AI API 설정 - v3 API 사용
+THEHIVE_API_URL = "https://api.thehive.ai/api/v3/hive/sdxl-enhanced"
+THEHIVE_FLUX_API_URL = "https://api.thehive.ai/api/v3/hive/flux-schnell"
+
 
 # 이미지 데이터 저장 및 불러오기 함수
 def load_images():
     images = Image.query.order_by(Image.created_at.desc()).all()
     return [image.to_dict() for image in images]
+
 
 def save_image(image_data):
     image = Image(
@@ -65,85 +71,76 @@ def save_image(image_data):
     db.session.commit()
     return image.to_dict()
 
+
 # TheHive.AI API를 사용하여 이미지 생성
 def generate_image_with_thehive(prompt, model="sdxl"):
     try:
         print(f"Using TheHive.AI API for image generation with model: {model}")
 
-        # API 요청 헤더 설정
+        # API 요청 헤더 설정 - Bearer 인증 방식 사용
         headers = {
-            "x-api-key": THEHIVE_API_KEY,  # 문서에 따라 x-api-key 헤더 사용
+            "authorization": f"Bearer {THEHIVE_API_KEY}",
             "Content-Type": "application/json"
         }
-        
-        # 모델 선택 (sdxl 또는 flux-schnell)
+
+        # 모델 선택 및 API 엔드포인트 결정
+        api_url = THEHIVE_API_URL
         if model.lower() == "flux-schnell":
-            model_id = "flux-schnell"
-            model_version = "v1.0.0-beta"
-        else:
-            model_id = "sdxl"
-            model_version = "v1.0.0"
-        
-        # API 요청 데이터 구성 - 문서에 맞춰 수정
+            api_url = THEHIVE_FLUX_API_URL
+
+        # 새로운 API v3 형식에 맞게 요청 데이터 구성
         data = {
-            "prompt": prompt,
-            "models": [
-                {
-                    "name": model_id,
-                    "version": model_version,
-                    "params": {
-                        "image_width": 1024,
-                        "image_height": 1024
-                    }
-                }
-            ]
+            "input": {
+                "prompt": prompt,
+                "negative_prompt": "",
+                "image_size": {"width": 1024, "height": 1024},
+                "num_inference_steps": 15,
+                "guidance_scale": 3.5,
+                "num_images": 1,
+                "output_format": "png"
+            }
         }
-        
+
         # API 요청
-        response = requests.post(
-            THEHIVE_API_URL,
-            headers=headers,
-            json=data
-        )
-        
+        response = requests.post(api_url, headers=headers, json=data)
+
         # 상태 코드 확인
         if response.status_code != 200:
             error_message = f"TheHive.AI API Error: {response.status_code} - {response.text}"
             print(error_message)
             return None, error_message, response.status_code
-        
+
         # 응답 파싱
         result = response.json()
-        
-        # 이미지 URL 추출
+        print(f"API 응답: {result}")
+
+        # 이미지 URL 또는 데이터 추출
         try:
-            # 응답 형식이 문서에 맞게 파싱
-            if "status" in result and result["status"] == "success":
-                if "outputs" in result and len(result["outputs"]) > 0:
-                    if "image" in result["outputs"][0]:
-                        image_data = result["outputs"][0]["image"]
-                        if "base64" in image_data:
-                            # base64 이미지 데이터를 URL 형식으로 변환
-                            image_url = f"data:image/jpeg;base64,{image_data['base64']}"
-                            return image_url, None, 200
-                        elif "url" in image_data:
-                            # URL이 있는 경우 그대로 사용
-                            image_url = image_data["url"]
-                            return image_url, None, 200
-            
+            # v3 API 응답 형식에 맞게 파싱
+            if "output" in result:
+                outputs = result["output"]
+                if isinstance(outputs, list) and len(outputs) > 0:
+                    # base64 이미지 데이터를 URL 형식으로 변환
+                    if "image_b64" in outputs[0]:
+                        image_url = f"data:image/png;base64,{outputs[0]['image_b64']}"
+                        return image_url, None, 200
+                    # URL이 있는 경우
+                    elif "image_url" in outputs[0]:
+                        image_url = outputs[0]["image_url"]
+                        return image_url, None, 200
+
             # 파싱 실패시 오류 메시지 반환
             print(f"응답 파싱 실패: {result}")
             return None, "응답에서 이미지 URL을 찾을 수 없습니다", 500
-            
+
         except (KeyError, IndexError) as e:
             print(f"응답 파싱 중 오류: {e}, 응답: {result}")
             return None, f"응답에서 이미지 URL을 찾을 수 없습니다: {str(e)}", 500
-            
+
     except Exception as e:
         error_message = f"TheHive.AI API 호출 중 오류: {str(e)}"
         print(error_message)
         return None, error_message, 500
-
 
 
 # API 라우트
@@ -152,40 +149,50 @@ def generate_image():
     try:
         data = request.json
         prompt = data.get('prompt', '')
-        
+
         # 클라이언트에서 전송한 모델 정보 수신 (기본값: sdxl)
         selected_model = data.get('model', 'sdxl')
-        
+
         # 허용된 모델 확인 (sdxl 또는 flux-schnell만 허용)
         if selected_model not in ['sdxl', 'flux-schnell']:
             selected_model = 'sdxl'  # 유효하지 않으면 기본값 사용
-        
+
         if not prompt:
             return jsonify({"error": "텍스트 설명이 필요합니다"}), 400
-            
+
         # TheHive.AI API를 사용하여 이미지 생성
         try:
-            print(f"Generating image with model: {selected_model}, prompt: '{prompt}'")
-            
+            print(
+                f"Generating image with model: {selected_model}, prompt: '{prompt}'"
+            )
+
             # TheHive.AI API로 이미지 생성
-            image_url, error, status_code = generate_image_with_thehive(prompt, selected_model)
-            
+            image_url, error, status_code = generate_image_with_thehive(
+                prompt, selected_model)
+
             if error:
                 return jsonify({"error": error}), status_code
-                
+
             return jsonify({"url": image_url})
-            
+
         except Exception as api_err:
             # API 특정 오류 처리
             error_message = str(api_err)
             error_code = 500
-            
+
             print(f"TheHive.AI API Error: {error_message}")
-            return jsonify({"error": error_message, "detail": str(api_err)}), error_code
-            
+            return jsonify({
+                "error": error_message,
+                "detail": str(api_err)
+            }), error_code
+
     except Exception as e:
         print(f"Error generating image: {e}")
-        return jsonify({"error": "이미지 생성 중 오류가 발생했습니다. 잠시 후 다시 시도해주세요.", "detail": str(e)}), 500
+        return jsonify({
+            "error": "이미지 생성 중 오류가 발생했습니다. 잠시 후 다시 시도해주세요.",
+            "detail": str(e)
+        }), 500
+
 
 @app.route('/api/images', methods=['GET'])
 def get_images():
@@ -195,6 +202,7 @@ def get_images():
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
+
 @app.route('/api/images', methods=['POST'])
 def save_image_api():
     try:
@@ -202,12 +210,12 @@ def save_image_api():
         prompt = data.get('prompt', '')
         url = data.get('url', '')
         model = data.get('model', 'sdxl')  # 모델 정보 가져오기
-        
+
         if not url or not prompt:
             return jsonify({"error": "URL과 설명이 필요합니다"}), 400
-            
+
         image_id = str(int(datetime.now().timestamp() * 1000))
-        
+
         new_image = {
             "id": image_id,
             "prompt": prompt,
@@ -215,14 +223,15 @@ def save_image_api():
             "model": model,  # 모델 정보 추가
             "createdAt": datetime.now().isoformat()
         }
-        
+
         # 데이터베이스에 저장
         saved_image = save_image(new_image)
-        
+
         return jsonify(saved_image)
     except Exception as e:
         print(f"Error saving image: {e}")
         return jsonify({"error": str(e)}), 500
+
 
 @app.route('/api/images/<image_id>', methods=['DELETE'])
 def delete_image(image_id):
@@ -239,6 +248,7 @@ def delete_image(image_id):
         print(f"Error deleting image: {e}")
         return jsonify({"error": str(e)}), 500
 
+
 @app.route('/api/images/clear', methods=['DELETE'])
 def clear_images():
     try:
@@ -250,6 +260,7 @@ def clear_images():
         print(f"Error clearing images: {e}")
         return jsonify({"error": str(e)}), 500
 
+
 # React 앱 서빙
 @app.route('/', defaults={'path': ''})
 @app.route('/<path:path>')
@@ -258,8 +269,10 @@ def serve(path):
         return send_from_directory(app.static_folder, path)
     return send_file(os.path.join(app.static_folder, 'index.html'))
 
+
 def open_browser():
     webbrowser.open('http://localhost:5000')
+
 
 if __name__ == '__main__':
     # 브라우저 자동 열기
