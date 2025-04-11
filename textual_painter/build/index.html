@@ -36,6 +36,14 @@
                                 <textarea class="form-control" id="prompt" rows="4" placeholder="만들고 싶은 이미지를 자세히 설명해주세요..." required></textarea>
                                 <div class="form-text" id="char-count">0/1000</div>
                             </div>
+                            <div class="mb-3">
+                                <label for="model" class="form-label">AI 모델 선택</label>
+                                <select class="form-select" id="model">
+                                    <option value="sdxl" selected>SDXL - 고품질 이미지 생성</option>
+                                    <option value="flux-schnell">Flux Schnell - 빠른 이미지 생성</option>
+                                </select>
+                                <div class="form-text">원하는 AI 모델을 선택하세요</div>
+                            </div>
                             <div class="d-grid">
                                 <button type="submit" class="btn btn-primary" id="generate-btn">이미지 생성하기</button>
                             </div>
@@ -91,7 +99,7 @@
         </div>
 
         <footer class="mt-5 pt-4 text-center text-muted border-top">
-            <p>© 2024 텍스트 이미지 생성기 | Powered by OpenAI DALL-E</p>
+            <p>© 2024 텍스트 이미지 생성기 | Powered by TheHive.AI (SDXL & Flux Schnell)</p>
         </footer>
     </div>
 

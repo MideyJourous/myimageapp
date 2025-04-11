@@ -3,6 +3,7 @@
 // DOM 요소
 const imageForm = document.getElementById('image-form');
 const promptInput = document.getElementById('prompt');
+const modelSelect = document.getElementById('model');
 const charCount = document.getElementById('char-count');
 const generateBtn = document.getElementById('generate-btn');
 const loadingElement = document.getElementById('loading');
