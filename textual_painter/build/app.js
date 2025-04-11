@@ -117,6 +117,54 @@ document.addEventListener('DOMContentLoaded', () => {
     // 테마 카드 컨테이너에 수평 스크롤 기능 추가
     const themeCardsContainer = document.querySelector('.theme-cards-container');
     
+    // 드래그 스크롤 기능 구현
+    let isDragging = false;
+    let startX, scrollLeft;
+    
+    // 마우스 이벤트 리스너
+    themeCardsContainer.addEventListener('mousedown', (e) => {
+        isDragging = true;
+        startX = e.pageX - themeCardsContainer.offsetLeft;
+        scrollLeft = themeCardsContainer.scrollLeft;
+        themeCardsContainer.style.cursor = 'grabbing';
+    });
+    
+    themeCardsContainer.addEventListener('mouseleave', () => {
+        isDragging = false;
+        themeCardsContainer.style.cursor = 'grab';
+    });
+    
+    themeCardsContainer.addEventListener('mouseup', () => {
+        isDragging = false;
+        themeCardsContainer.style.cursor = 'grab';
+    });
+    
+    themeCardsContainer.addEventListener('mousemove', (e) => {
+        if (!isDragging) return;
+        e.preventDefault();
+        const x = e.pageX - themeCardsContainer.offsetLeft;
+        const walk = (x - startX) * 2; // 스크롤 속도 조정
+        themeCardsContainer.scrollLeft = scrollLeft - walk;
+    });
+    
+    // 터치 이벤트 리스너 (모바일 지원)
+    themeCardsContainer.addEventListener('touchstart', (e) => {
+        isDragging = true;
+        startX = e.touches[0].pageX - themeCardsContainer.offsetLeft;
+        scrollLeft = themeCardsContainer.scrollLeft;
+    });
+    
+    themeCardsContainer.addEventListener('touchend', () => {
+        isDragging = false;
+    });
+    
+    themeCardsContainer.addEventListener('touchmove', (e) => {
+        if (!isDragging) return;
+        const x = e.touches[0].pageX - themeCardsContainer.offsetLeft;
+        const walk = (x - startX) * 2;
+        themeCardsContainer.scrollLeft = scrollLeft - walk;
+    });
+    
     // 모든 카드 표시 (블러된 것 포함)
     document.querySelectorAll('.theme-card').forEach(card => {
         card.style.display = 'inline-block';

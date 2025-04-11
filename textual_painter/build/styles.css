@@ -87,12 +87,18 @@ body {
     display: flex;
     padding: 2rem 0 1rem;
     position: relative;
-    height: 490px; /* 높이 1.4배 증가 */
+    height: 590px; /* 더 큰 높이로 조정 (카드 세로 길이 증가에 맞춤) */
     overflow-x: auto;
     scroll-behavior: smooth;
     -webkit-overflow-scrolling: touch;
     scrollbar-width: none; /* Firefox에서 스크롤바 숨김 */
     -ms-overflow-style: none; /* IE/Edge에서 스크롤바 숨김 */
+    cursor: grab; /* 손 모양 커서로 변경하여 드래그 가능함을 표시 */
+    user-select: none; /* 텍스트 선택 방지 */
+}
+
+.theme-cards-container:active {
+    cursor: grabbing; /* 드래그 중일 때 커서 변경 */
 }
 
 /* Webkit 브라우저에서 스크롤바 숨김 */
@@ -101,9 +107,9 @@ body {
 }
 
 .theme-card {
-    width: 294px; /* 1.4배 증가 210 * 1.4 */
-    height: 378px; /* 1.4배 증가 270 * 1.4 */
-    margin: 0 10px; /* 카드 간 간격 설정 */
+    width: 294px; /* 1.4배 증가 210 * 1.4 (가로 크기는 그대로 유지) */
+    height: 459px; /* 1.7배 증가 270 * 1.7 */
+    margin: 0 15px; /* 카드 간 간격 증가 */
     position: relative; /* absolute 대신 relative 사용 */
     transition: all 0.5s ease;
     cursor: pointer;
