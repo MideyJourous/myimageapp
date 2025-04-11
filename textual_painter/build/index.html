@@ -7,13 +7,22 @@
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
     <link rel="stylesheet" href="styles.css">
 </head>
-<body>
-    <div class="container mt-4">
-        <header class="text-center mb-4">
-            <h1>텍스트 이미지 생성기</h1>
-            <p class="lead">텍스트 설명을 입력하면 AI가 이미지를 생성합니다</p>
-        </header>
+<body class="dark-theme">
+    <div class="app-container">
+        <!-- 상단 이미지 디스플레이 영역 -->
+        <div id="image-display" class="image-display-container">
+            <!-- 랜덤 이미지가 여기에 표시됩니다 -->
+            <div id="random-image-container" class="random-image-container">
+                <div id="fallback-circle" class="rainbow-circle d-none"></div>
+                <img id="random-image" src="" alt="Random Generated Image" class="random-image">
+            </div>
+            <!-- 텍스트 입력 활성화시 표시되는 텍스트 -->
+            <div id="large-text-display" class="large-text-display d-none">
+                <p id="display-text"></p>
+            </div>
+        </div>
 
+        <!-- 탭 네비게이션 -->
         <ul class="nav nav-tabs" id="myTab" role="tablist">
             <li class="nav-item" role="presentation">
                 <button class="nav-link active" id="generator-tab" data-bs-toggle="tab" data-bs-target="#generator" type="button" role="tab" aria-controls="generator" aria-selected="true">이미지 생성</button>
@@ -23,17 +32,15 @@
             </li>
         </ul>
 
-        <div class="tab-content mt-3" id="myTabContent">
+        <div class="tab-content" id="myTabContent">
             <!-- 이미지 생성 탭 -->
             <div class="tab-pane fade show active" id="generator" role="tabpanel" aria-labelledby="generator-tab">
                 <div class="card shadow-sm">
                     <div class="card-body">
-                        <h5 class="card-title">이미지 생성하기</h5>
-                        
                         <form id="image-form">
                             <div class="mb-3">
-                                <label for="prompt" class="form-label">이미지 설명</label>
-                                <textarea class="form-control" id="prompt" rows="4" placeholder="만들고 싶은 이미지를 자세히 설명해주세요..." required></textarea>
+                                <label for="prompt" class="form-label">어떤 이미지가 필요하신가요?</label>
+                                <textarea class="form-control" id="prompt" rows="3" placeholder="만들고 싶은 이미지를 자세히 설명해주세요..." required></textarea>
                                 <div class="form-text" id="char-count">0/1000</div>
                             </div>
                             <div class="mb-3">
