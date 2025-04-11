@@ -47,7 +47,7 @@ with app.app_context():
 THEHIVE_API_KEY = os.environ.get('THEHIVE_API_KEY')
 
 # TheHive.AI API 설정
-THEHIVE_API_URL = "https://api.thehive.ai/api/v2/image/generations"
+THEHIVE_API_URL = "https://api.thehive.ai/api/v2/task/sync"
 
 # 이미지 데이터 저장 및 불러오기 함수
 def load_images():
@@ -78,24 +78,30 @@ def generate_image_with_thehive(prompt, model="sdxl"):
         
         # 모델 선택 (sdxl 또는 flux-schnell)
         if model.lower() == "flux-schnell":
-            endpoint = "https://api.thehive.ai/api/v2/image/generations"
             model_id = "flux-schnell"
+            model_version = "v1.0.0-beta"
         else:
-            endpoint = "https://api.thehive.ai/api/v2/image/generations"
-            model_id = "hive/sdxl-enhanced:1.0.0"
+            model_id = "sdxl"
+            model_version = "v1.0.0"
         
         # API 요청 데이터 구성 - 문서에 맞춰 수정
         data = {
             "prompt": prompt,
-            "negative_prompt": "",  # 필요에 따라 설정 가능
-            "width": 1024,
-            "height": 1024,
-            "model": model_id,
+            "models": [
+                {
+                    "name": model_id,
+                    "version": model_version,
+                    "params": {
+                        "image_width": 1024,
+                        "image_height": 1024
+                    }
+                }
+            ]
         }
         
         # API 요청
         response = requests.post(
-            endpoint,
+            THEHIVE_API_URL,
             headers=headers,
             json=data
         )
@@ -111,9 +117,26 @@ def generate_image_with_thehive(prompt, model="sdxl"):
         
         # 이미지 URL 추출
         try:
-            image_url = result['data'][0]['images'][0]
-            return image_url, None, 200
+            # 응답 형식이 문서에 맞게 파싱
+            if "status" in result and result["status"] == "success":
+                if "outputs" in result and len(result["outputs"]) > 0:
+                    if "image" in result["outputs"][0]:
+                        image_data = result["outputs"][0]["image"]
+                        if "base64" in image_data:
+                            # base64 이미지 데이터를 URL 형식으로 변환
+                            image_url = f"data:image/jpeg;base64,{image_data['base64']}"
+                            return image_url, None, 200
+                        elif "url" in image_data:
+                            # URL이 있는 경우 그대로 사용
+                            image_url = image_data["url"]
+                            return image_url, None, 200
+            
+            # 파싱 실패시 오류 메시지 반환
+            print(f"응답 파싱 실패: {result}")
+            return None, "응답에서 이미지 URL을 찾을 수 없습니다", 500
+            
         except (KeyError, IndexError) as e:
+            print(f"응답 파싱 중 오류: {e}, 응답: {result}")
             return None, f"응답에서 이미지 URL을 찾을 수 없습니다: {str(e)}", 500
             
     except Exception as e:
