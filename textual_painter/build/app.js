@@ -16,6 +16,14 @@ const galleryContainer = document.getElementById('gallery-container');
 const emptyGallery = document.getElementById('empty-gallery');
 const clearGalleryBtn = document.getElementById('clear-gallery');
 
+// 새로운 UI 요소
+const imageDisplay = document.getElementById('image-display');
+const randomImageContainer = document.getElementById('random-image-container');
+const randomImage = document.getElementById('random-image');
+const fallbackCircle = document.getElementById('fallback-circle');
+const largeTextDisplay = document.getElementById('large-text-display');
+const displayText = document.getElementById('display-text');
+
 // 모달 요소
 const imageModal = new bootstrap.Modal(document.getElementById('image-modal'));
 const modalImage = document.getElementById('modal-image');
@@ -35,6 +43,7 @@ const STORAGE_KEY = 'text_to_image_gallery';
 
 // 현재 생성된 이미지 데이터
 let currentImage = null;
+let savedImagesCache = null;
 
 // 초기화
 document.addEventListener('DOMContentLoaded', () => {
@@ -43,6 +52,8 @@ document.addEventListener('DOMContentLoaded', () => {
     
     // 문자 수 카운터 업데이트
     promptInput.addEventListener('input', updateCharCount);
+    promptInput.addEventListener('focus', showLargeTextDisplay);
+    promptInput.addEventListener('blur', hideLargeTextDisplay);
     
     // 이벤트 리스너 등록
     imageForm.addEventListener('submit', handleImageGeneration);
@@ -51,7 +62,75 @@ document.addEventListener('DOMContentLoaded', () => {
     
     // 초기 문자 수 설정
     updateCharCount();
+    
+    // 서버에서 이미지 로드 및 로컬 스토리지와 동기화
+    syncImagesWithServer().then(() => {
+        // 랜덤 이미지 표시
+        loadRandomImage();
+    }).catch(() => {
+        // 서버 오류시 로컬 이미지만 사용
+        loadRandomImage();
+    });
 });
+
+// 서버와 로컬 스토리지 동기화
+async function syncImagesWithServer() {
+    try {
+        // 서버에서 이미지 데이터 가져오기
+        const response = await fetch('/api/images');
+        
+        if (!response.ok) {
+            throw new Error('서버에서 이미지를 가져오는데 실패했습니다.');
+        }
+        
+        const serverImages = await response.json();
+        
+        if (serverImages && serverImages.length > 0) {
+            // 로컬 스토리지에 있는 이미지 가져오기
+            let localImages = getSavedImages();
+            
+            // 서버 이미지 ID 목록
+            const serverImageIds = new Set(serverImages.map(img => img.id));
+            
+            // 로컬 이미지 중 서버에 없는 이미지를 서버에 동기화
+            for (const localImage of localImages) {
+                if (!serverImageIds.has(localImage.id)) {
+                    await saveToDatabaseAsync(localImage);
+                }
+            }
+            
+            // 로컬 스토리지의 이미지 ID 목록
+            const localImageIds = new Set(localImages.map(img => img.id));
+            
+            // 서버에 있지만 로컬에 없는 이미지 추가
+            for (const serverImage of serverImages) {
+                if (!localImageIds.has(serverImage.id)) {
+                    const newLocalImage = {
+                        id: serverImage.id,
+                        prompt: serverImage.prompt,
+                        imageUrl: serverImage.image_url,
+                        model: serverImage.model || 'sdxl',
+                        createdAt: serverImage.created_at
+                    };
+                    
+                    localImages.push(newLocalImage);
+                }
+            }
+            
+            // 날짜 기준으로 정렬
+            localImages.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+            
+            // 로컬 스토리지 업데이트
+            localStorage.setItem(STORAGE_KEY, JSON.stringify(localImages));
+            
+            // 캐시 업데이트
+            savedImagesCache = localImages;
+        }
+    } catch (error) {
+        console.error('서버 동기화 오류:', error);
+        // 오류 발생시 로컬 데이터만 사용
+    }
+}
 
 // 문자 수 업데이트
 function updateCharCount() {
@@ -83,6 +162,12 @@ async function handleImageGeneration(e) {
     loadingElement.classList.remove('d-none');
     errorElement.classList.add('d-none');
     resultElement.classList.add('d-none');
+    
+    // 텍스트 입력란에서 포커스 제거
+    promptInput.blur();
+    
+    // 로딩 중 무지개 원 표시
+    showFallbackCircle();
     
     try {
         // 선택된 모델 기반 로딩 메시지 업데이트
@@ -116,6 +201,7 @@ async function handleImageGeneration(e) {
             createdAt: new Date().toISOString()
         };
         
+        // 결과 영역에 이미지 표시
         generatedImage.src = data.url;
         downloadBtn.href = data.url;
         saveBtn.disabled = false;
@@ -123,8 +209,14 @@ async function handleImageGeneration(e) {
         
         resultElement.classList.remove('d-none');
         
+        // 상단 이미지 영역에도 생성된 이미지 표시
+        randomImage.src = data.url;
+        randomImage.alt = prompt;
+        hideFallbackCircle();
+        
     } catch (error) {
         showError(error);
+        // 오류 발생 시 무지개 원 유지
     } finally {
         generateBtn.disabled = false;
         loadingElement.classList.add('d-none');
@@ -163,8 +255,14 @@ function saveCurrentImage() {
     saveBtn.disabled = true;
     saveBtn.textContent = '저장됨';
     
+    // 캐시 업데이트
+    savedImagesCache = savedImages;
+    
     // 알림 표시
     showAlert('이미지가 갤러리에 저장되었습니다.', 'success');
+    
+    // API 서버에 저장 요청 (로컬 스토리지와 별개의 백엔드 저장)
+    saveToDatabaseAsync(currentImage);
 }
 
 // 저장된 이미지 목록 가져오기
@@ -266,15 +364,68 @@ function confirmDeleteImage(imageId) {
     confirmModal.show();
 }
 
+// 데이터베이스에 이미지 저장 (백엔드 API 호출)
+async function saveToDatabaseAsync(image) {
+    try {
+        const response = await fetch('/api/images', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                prompt: image.prompt,
+                url: image.imageUrl,
+                model: image.model
+            })
+        });
+        
+        if (!response.ok) {
+            console.error('이미지를 서버에 저장하는 중 오류가 발생했습니다.');
+        }
+    } catch (error) {
+        console.error('서버 저장 오류:', error);
+    }
+}
+
 // 이미지 삭제
 function deleteImage(imageId) {
     const savedImages = getSavedImages();
+    const imageToDelete = savedImages.find(img => img.id === imageId);
     const updatedImages = savedImages.filter(img => img.id !== imageId);
     
+    // 로컬 스토리지 업데이트
     localStorage.setItem(STORAGE_KEY, JSON.stringify(updatedImages));
+    savedImagesCache = updatedImages;
+    
+    // 갤러리 다시 로드
     loadGalleryImages();
     
+    // 상단 이미지 업데이트 (삭제된 이미지가 표시되고 있었다면)
+    if (randomImage.src === imageToDelete?.imageUrl) {
+        loadRandomImage(); // 다른 랜덤 이미지로 교체
+    }
+    
+    // 서버에서도 삭제 요청 (백엔드 API가 있을 경우)
+    if (imageToDelete) {
+        deleteDatabaseImageAsync(imageId);
+    }
+    
     showAlert('이미지가 삭제되었습니다.', 'info');
+}
+
+// 데이터베이스에서 이미지 삭제 (백엔드 API 호출)
+async function deleteDatabaseImageAsync(imageId) {
+    try {
+        const response = await fetch(`/api/images/${imageId}`, {
+            method: 'DELETE'
+        });
+        
+        if (!response.ok) {
+            console.error('이미지를 서버에서 삭제하는 중 오류가 발생했습니다.');
+        }
+    } catch (error) {
+        console.error('서버 삭제 오류:', error);
+    }
 }
 
 // 갤러리 초기화 확인
@@ -293,15 +444,110 @@ function confirmClearGallery() {
 // 갤러리 초기화
 function clearGallery() {
     localStorage.removeItem(STORAGE_KEY);
+    savedImagesCache = [];
+    
+    // 상단 이미지 표시 초기화
+    showFallbackCircle();
+    
+    // 갤러리 UI 업데이트
     loadGalleryImages();
     
+    // 서버에 초기화 요청
+    clearDatabaseGalleryAsync();
+    
     showAlert('갤러리가 초기화되었습니다.', 'info');
+}
+
+// 데이터베이스 갤러리 초기화 (백엔드 API 호출)
+async function clearDatabaseGalleryAsync() {
+    try {
+        const response = await fetch('/api/images/clear', {
+            method: 'DELETE'
+        });
+        
+        if (!response.ok) {
+            console.error('서버에서 모든 이미지를 삭제하는 중 오류가 발생했습니다.');
+        }
+    } catch (error) {
+        console.error('서버 갤러리 초기화 오류:', error);
+    }
 }
 
 // 날짜 포맷
 function formatDate(date) {
     const options = { year: 'numeric', month: 'long', day: 'numeric' };
     return date.toLocaleDateString('ko-KR', options);
+}
+
+// 텍스트 입력 필드가 활성화될 때 호출되는 함수
+function showLargeTextDisplay() {
+    // 텍스트 표시 업데이트
+    updateDisplayText();
+    
+    // 이미지 컨테이너 숨기기
+    randomImageContainer.style.display = 'none';
+    
+    // 텍스트 디스플레이 표시
+    largeTextDisplay.classList.remove('d-none');
+    largeTextDisplay.classList.add('active');
+    
+    // 입력 변경 이벤트 추가
+    promptInput.addEventListener('input', updateDisplayText);
+}
+
+// 텍스트 입력 필드가 비활성화될 때 호출되는 함수
+function hideLargeTextDisplay() {
+    // 텍스트 디스플레이 숨기기
+    largeTextDisplay.classList.remove('active');
+    setTimeout(() => {
+        largeTextDisplay.classList.add('d-none');
+        
+        // 이미지 컨테이너 다시 표시
+        randomImageContainer.style.display = 'flex';
+    }, 300);
+    
+    // 입력 변경 이벤트 제거
+    promptInput.removeEventListener('input', updateDisplayText);
+}
+
+// 대형 텍스트 디스플레이 업데이트
+function updateDisplayText() {
+    const text = promptInput.value.trim();
+    displayText.textContent = text || '텍스트를 입력해주세요...';
+}
+
+// 랜덤 이미지 로드 함수
+function loadRandomImage() {
+    savedImagesCache = getSavedImages();
+    
+    if (savedImagesCache.length > 0) {
+        // 랜덤 이미지 선택
+        const randomIndex = Math.floor(Math.random() * savedImagesCache.length);
+        const randomSavedImage = savedImagesCache[randomIndex];
+        
+        // 이미지 표시
+        randomImage.src = randomSavedImage.imageUrl;
+        randomImage.alt = randomSavedImage.prompt;
+        
+        // 이미지 로드 오류 처리
+        randomImage.onerror = showFallbackCircle;
+        randomImage.onload = hideFallbackCircle;
+    } else {
+        // 저장된 이미지가 없으면 서버에서 새 이미지 생성 대신 무지개 원 표시
+        showFallbackCircle();
+    }
+}
+
+// 무지개 색상의 원 표시
+function showFallbackCircle() {
+    randomImage.style.display = 'none';
+    fallbackCircle.classList.remove('d-none');
+}
+
+// 무지개 색상의 원 숨기기
+function hideFallbackCircle() {
+    fallbackCircle.classList.add('d-none');
+    randomImage.style.display = 'block';
 }
 
 // 알림 표시
