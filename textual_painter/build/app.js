@@ -45,10 +45,11 @@ const STORAGE_KEY = 'text_to_image_gallery';
 let currentImage = null;
 let savedImagesCache = null;
 
-// 갤러리 관련 DOM 요소
+// 갤러리 및 구독 관련 DOM 요소
 const galleryButton = document.getElementById('gallery-button');
 const galleryOverlay = document.getElementById('gallery-overlay');
 const closeGalleryButton = document.getElementById('close-gallery');
+const subscriptionButton = document.getElementById('subscription-button');
 
 // 초기화
 document.addEventListener('DOMContentLoaded', () => {
@@ -57,6 +58,11 @@ document.addEventListener('DOMContentLoaded', () => {
     
     // 갤러리 닫기 버튼 클릭 시 갤러리 숨기기
     closeGalleryButton.addEventListener('click', hideGallery);
+    
+    // 구독 버튼 클릭 시 이벤트 처리
+    subscriptionButton.addEventListener('click', () => {
+        showAlert('프리미엄 구독 기능은 준비 중입니다. 곧 만나볼 수 있습니다!', 'warning');
+    });
     
     // 문자 수 카운터 업데이트
     promptInput.addEventListener('input', updateCharCount);

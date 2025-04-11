@@ -42,7 +42,7 @@ body {
     flex-grow: 1;
 }
 
-.gallery-button {
+.gallery-button, .subscription-button {
     background-color: #2d2d2d;
     color: #e0e0e0;
     border: none;
@@ -55,6 +55,7 @@ body {
     cursor: pointer;
     transition: all 0.2s ease;
     box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
+    margin-left: 12px;
 }
 
 .gallery-button:hover {
@@ -62,13 +63,101 @@ body {
     transform: translateY(-2px);
 }
 
-.gallery-button i {
+.subscription-button {
+    background-color: #333333;
+    color: #FFD700; /* Gold color for the star */
+}
+
+.subscription-button:hover {
+    background-color: #444444;
+    transform: translateY(-2px);
+}
+
+.gallery-button i, .subscription-button i {
     font-size: 1.5rem;
 }
 
 /* 메인 컨텐츠 영역 */
 .main-content {
     margin-top: 1rem;
+}
+
+/* 프롬프트 입력 컨테이너 */
+.prompt-container {
+    margin-bottom: 2rem;
+}
+
+.input-group-custom {
+    position: relative;
+    display: flex;
+    border-radius: 20px;
+    overflow: hidden;
+    background-color: #2a2a2a;
+    box-shadow: 0 8px 16px rgba(0, 0, 0, 0.2);
+    transition: box-shadow 0.3s ease;
+}
+
+.input-group-custom:focus-within {
+    box-shadow: 0 10px 20px rgba(0, 0, 0, 0.3), 0 0 0 2px rgba(74, 111, 220, 0.3);
+}
+
+.prompt-input {
+    flex: 1;
+    background-color: transparent;
+    border: none;
+    outline: none;
+    padding: 18px 60px 18px 20px;
+    color: #e0e0e0;
+    font-size: 1rem;
+    line-height: 1.5;
+    resize: none;
+}
+
+.prompt-input::placeholder {
+    color: #888;
+}
+
+.prompt-input:focus {
+    outline: none;
+}
+
+.generate-button {
+    position: absolute;
+    right: 12px;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 44px;
+    height: 44px;
+    border-radius: 50%;
+    background-color: #4A6FDC;
+    color: white;
+    border: none;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    cursor: pointer;
+    transition: all 0.2s;
+    z-index: 2;
+}
+
+.generate-button:hover {
+    background-color: #3a5bc4;
+    transform: translateY(-50%) scale(1.05);
+}
+
+.generate-button:active {
+    transform: translateY(-50%) scale(0.95);
+}
+
+.generate-button i {
+    font-size: 1.3rem;
+}
+
+.prompt-counter {
+    text-align: right;
+    padding: 6px 16px;
+    margin-top: 4px;
+    font-size: 0.85rem;
 }
 
 /* 이미지 디스플레이 영역 */

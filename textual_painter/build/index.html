@@ -10,10 +10,13 @@
 </head>
 <body class="dark-theme">
     <div class="app-container">
-        <!-- 헤더 및 갤러리 버튼 -->
+        <!-- 헤더 및 버튼들 -->
         <header class="app-header">
             <div class="header-content">
                 <div class="spacer"></div>
+                <button id="subscription-button" class="subscription-button" title="프리미엄 구독">
+                    <i class="bi bi-star-fill"></i>
+                </button>
                 <button id="gallery-button" class="gallery-button" title="내 갤러리 보기">
                     <i class="bi bi-images"></i>
                 </button>
@@ -35,39 +38,34 @@
 
         <!-- 이미지 생성 영역 (메인) -->
         <div id="main-content" class="main-content">
-            <div class="card shadow-sm">
-                <div class="card-body">
-                    <form id="image-form">
-                        <div class="mb-3">
-                            <label for="prompt" class="form-label">어떤 이미지가 필요하신가요?</label>
-                            <textarea class="form-control" id="prompt" rows="3" placeholder="만들고 싶은 이미지를 자세히 설명해주세요..." required></textarea>
-                            <div class="form-text" id="char-count">0/1000</div>
-                        </div>
-                        <!-- 모델 선택 옵션은 삭제되었지만 모델 값은 JavaScript에서 사용하기 위해 숨김 -->
-                        <input type="hidden" id="model" value="sdxl">
-                        <div class="d-grid">
-                            <button type="submit" class="btn btn-primary" id="generate-btn">이미지 생성하기</button>
-                        </div>
-                    </form>
+            <form id="image-form" class="prompt-container">
+                <div class="input-group-custom">
+                    <textarea id="prompt" class="prompt-input" rows="3" placeholder="만들고 싶은 이미지를 자세히 설명해주세요..." required></textarea>
+                    <button type="submit" id="generate-btn" class="generate-button" title="이미지 생성하기">
+                        <i class="bi bi-wand-magic-sparkles"></i>
+                    </button>
+                </div>
+                <div class="form-text prompt-counter" id="char-count">0/1000</div>
+                <!-- 모델 선택 옵션은 삭제되었지만 모델 값은 JavaScript에서 사용하기 위해 숨김 -->
+                <input type="hidden" id="model" value="sdxl">
+            </form>
 
-                    <div id="loading" class="text-center my-4 d-none">
-                        <div class="spinner-border text-primary" role="status">
-                            <span class="visually-hidden">로딩중...</span>
-                        </div>
-                        <p class="mt-2">이미지를 생성하고 있습니다. 잠시만 기다려주세요...</p>
-                    </div>
+            <div id="loading" class="text-center my-4 d-none">
+                <div class="spinner-border text-primary" role="status">
+                    <span class="visually-hidden">로딩중...</span>
+                </div>
+                <p class="mt-2">이미지를 생성하고 있습니다. 잠시만 기다려주세요...</p>
+            </div>
 
-                    <div id="error" class="alert alert-danger mt-3 d-none" role="alert"></div>
+            <div id="error" class="alert alert-danger mt-3 d-none" role="alert"></div>
 
-                    <div id="result" class="mt-4 d-none">
-                        <h5 class="mb-3">생성된 이미지</h5>
-                        <div class="image-container text-center">
-                            <img id="generated-image" src="" alt="Generated Image" class="img-fluid rounded">
-                            <div class="mt-3">
-                                <button id="save-btn" class="btn btn-success me-2">갤러리에 저장</button>
-                                <a id="download-btn" href="" download="generated-image.png" class="btn btn-outline-primary" target="_blank">다운로드</a>
-                            </div>
-                        </div>
+            <div id="result" class="mt-4 d-none">
+                <h5 class="mb-3">생성된 이미지</h5>
+                <div class="image-container text-center">
+                    <img id="generated-image" src="" alt="Generated Image" class="img-fluid rounded">
+                    <div class="mt-3">
+                        <button id="save-btn" class="btn btn-success me-2">갤러리에 저장</button>
+                        <a id="download-btn" href="" download="generated-image.png" class="btn btn-outline-primary" target="_blank">다운로드</a>
                     </div>
                 </div>
             </div>
