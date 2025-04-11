@@ -77,6 +77,89 @@ body {
     font-size: 1.5rem;
 }
 
+/* 테마 선택 영역 */
+.theme-selector {
+    margin: 1rem 0 2rem;
+}
+
+.theme-cards-container {
+    display: flex;
+    justify-content: center;
+    align-items: flex-end; /* 모든 카드가 하단에 정렬 */
+    padding: 2rem 0 1rem;
+    position: relative;
+    height: 200px;
+}
+
+.theme-card {
+    width: 100px;
+    height: 130px;
+    margin: 0 -5px; /* 겹쳐지는 효과 */
+    position: absolute;
+    transition: all 0.3s ease;
+    cursor: pointer;
+    transform-origin: bottom center;
+    z-index: 1;
+}
+
+.theme-card:nth-child(1) {
+    transform: translateX(-200px) rotate(-20deg) scale(0.8);
+}
+
+.theme-card:nth-child(2) {
+    transform: translateX(-100px) rotate(-10deg) scale(0.9);
+}
+
+.theme-card:nth-child(3) {
+    transform: translateX(0) rotate(0) scale(1);
+    z-index: 5;
+}
+
+.theme-card:nth-child(4) {
+    transform: translateX(100px) rotate(10deg) scale(0.9);
+}
+
+.theme-card:nth-child(5) {
+    transform: translateX(200px) rotate(20deg) scale(0.8);
+}
+
+.theme-card-inner {
+    width: 100%;
+    height: 100%;
+    background-color: #2d2d2d;
+    border-radius: 12px;
+    overflow: hidden;
+    box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+    display: flex;
+    flex-direction: column;
+    transition: all 0.3s ease;
+}
+
+.theme-card:hover .theme-card-inner {
+    transform: translateY(-10px);
+    box-shadow: 0 10px 20px rgba(0,0,0,0.4);
+}
+
+.theme-card.active .theme-card-inner {
+    background-color: #4A6FDC;
+    box-shadow: 0 8px 20px rgba(74, 111, 220, 0.5);
+}
+
+.theme-image {
+    height: 70%;
+    background-color: #3a3a3a;
+    background-size: cover;
+    background-position: center;
+}
+
+.theme-title {
+    padding: 8px;
+    text-align: center;
+    font-weight: 600;
+    font-size: 0.85rem;
+    color: #e0e0e0;
+}
+
 /* 메인 컨텐츠 영역 */
 .main-content {
     margin-top: 1rem;

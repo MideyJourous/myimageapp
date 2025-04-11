@@ -1,5 +1,14 @@
 // 텍스트 이미지 생성기 - 자바스크립트
 
+// 테마 프롬프트
+const THEME_PROMPTS = {
+    'nature': '자연 풍경, 산과 숲, 아름다운 자연',
+    'fantasy': '판타지 세계, 마법, 신비로운 생명체',
+    'abstract': '추상적인 패턴, 형태, 현대 예술',
+    'space': '우주, 별, 행성, 은하계, 성운',
+    'cityscape': '도시 풍경, 건물, 야경, 도시 생활'
+};
+
 // DOM 요소
 const imageForm = document.getElementById('image-form');
 const promptInput = document.getElementById('prompt');
@@ -23,6 +32,9 @@ const randomImage = document.getElementById('random-image');
 const fallbackCircle = document.getElementById('fallback-circle');
 const largeTextDisplay = document.getElementById('large-text-display');
 const displayText = document.getElementById('display-text');
+
+// 테마 관련 요소
+const themeCards = document.querySelectorAll('.theme-card');
 
 // 모달 요소
 const imageModal = new bootstrap.Modal(document.getElementById('image-modal'));
@@ -73,6 +85,13 @@ document.addEventListener('DOMContentLoaded', () => {
     imageForm.addEventListener('submit', handleImageGeneration);
     saveBtn.addEventListener('click', saveCurrentImage);
     clearGalleryBtn.addEventListener('click', confirmClearGallery);
+    
+    // 테마 카드 선택 이벤트 등록
+    themeCards.forEach(card => {
+        card.addEventListener('click', () => {
+            selectThemeCard(card);
+        });
+    });
     
     // 초기 문자 수 설정
     updateCharCount();
@@ -597,6 +616,31 @@ function hideGallery() {
         // 스크롤 다시 허용
         document.body.style.overflow = 'auto';
     }, 300);
+}
+
+// 테마 카드 선택
+function selectThemeCard(card) {
+    // 기존 선택된 카드의 active 클래스 제거
+    themeCards.forEach(c => c.classList.remove('active'));
+    
+    // 선택된 카드에 active 클래스 추가
+    card.classList.add('active');
+    
+    // 테마에 해당하는 프롬프트 가져오기
+    const themeType = card.getAttribute('data-theme');
+    const themePrompt = THEME_PROMPTS[themeType];
+    
+    // 프롬프트 입력창에 테마 프롬프트 설정
+    promptInput.value = themePrompt;
+    
+    // 문자 수 카운터 업데이트
+    updateCharCount();
+    
+    // 대형 텍스트 디스플레이 업데이트
+    updateDisplayText();
+    
+    // 알림 표시
+    showAlert(`'${themeType}' 테마가 선택되었습니다.`, 'info');
 }
 
 // 알림 표시
