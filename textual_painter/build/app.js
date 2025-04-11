@@ -114,19 +114,32 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
     
-    // 테마 네비게이션 버튼 요소
-    const themePrevBtn = document.getElementById('theme-prev');
-    const themeNextBtn = document.getElementById('theme-next');
+    // 테마 카드 컨테이너에 수평 스크롤 기능 추가
+    const themeCardsContainer = document.querySelector('.theme-cards-container');
     
-    // 카드 세트 변수
-    let isFirstCardSet = true;
+    // 모든 카드 표시 (블러된 것 포함)
+    document.querySelectorAll('.theme-card').forEach(card => {
+        card.style.display = 'inline-block';
+    });
     
-    // 테마 네비게이션 버튼 이벤트 등록
-    themePrevBtn.addEventListener('click', showPreviousCardSet);
-    themeNextBtn.addEventListener('click', showNextCardSet);
-    
-    // 초기 카드 세트 설정
-    updateCardSetVisibility();
+    // 스크롤 이벤트 애니메이션 효과 추가
+    themeCardsContainer.addEventListener('scroll', (e) => {
+        requestAnimationFrame(() => {
+            // 스크롤 위치에 따라 카드에 애니메이션 효과 적용
+            const scrollPosition = themeCardsContainer.scrollLeft;
+            document.querySelectorAll('.theme-card').forEach((card, index) => {
+                // 카드의 위치에 따라 스케일과 불투명도 효과 적용
+                const cardPosition = card.offsetLeft - scrollPosition;
+                const distanceFromCenter = Math.abs(cardPosition - (themeCardsContainer.offsetWidth / 2) + (card.offsetWidth / 2));
+                const maxDistance = themeCardsContainer.offsetWidth / 2;
+                const scale = Math.max(0.7, 1 - (distanceFromCenter / maxDistance) * 0.3);
+                
+                // 스케일 및 불투명도 애니메이션 적용
+                card.style.transform = `scale(${scale})`;
+                card.style.opacity = Math.max(0.6, scale);
+            });
+        });
+    });
 });
 
 // 서버와 로컬 스토리지 동기화
@@ -628,55 +641,7 @@ function selectThemeCard(card) {
     showAlert(`'${themeType}' 테마가 선택되었습니다.`, 'info');
 }
 
-// 카드 세트 가시성 업데이트
-function updateCardSetVisibility() {
-    // 활성화 상태 및 블러 처리 클래스 초기화
-    const activeSetCards = document.querySelectorAll('.active-set');
-    const blurredSetCards = document.querySelectorAll('.blurred-set');
-    
-    // 첫 번째 세트가 활성화된 경우
-    if (isFirstCardSet) {
-        // 첫 번째 세트만 보이도록
-        activeSetCards.forEach(card => {
-            card.style.display = 'block';
-            card.classList.remove('blurred-set');
-        });
-        
-        // 두 번째 세트는 숨김
-        blurredSetCards.forEach(card => {
-            card.style.display = 'none';
-        });
-    } else {
-        // 두 번째 세트가 활성화된 경우
-        activeSetCards.forEach(card => {
-            card.style.display = 'none';
-        });
-        
-        // 두 번째 세트는 보이도록 설정 (블러 처리됨)
-        blurredSetCards.forEach(card => {
-            card.style.display = 'block';
-            card.classList.add('active-set');
-        });
-    }
-}
 
-// 이전 카드 세트 표시
-function showPreviousCardSet() {
-    if (!isFirstCardSet) {
-        isFirstCardSet = true;
-        updateCardSetVisibility();
-        showAlert('첫 번째 테마 세트로 전환되었습니다.', 'info');
-    }
-}
-
-// 다음 카드 세트 표시
-function showNextCardSet() {
-    if (isFirstCardSet) {
-        isFirstCardSet = false;
-        updateCardSetVisibility();
-        showAlert('추가 테마 세트로 전환되었습니다. (블러 처리된 이미지)', 'info');
-    }
-}
 
 // 알림 표시
 function showAlert(message, type = 'info') {

@@ -80,97 +80,64 @@ body {
 /* 테마 선택 영역 */
 .theme-selector {
     margin: 1rem 0 2rem;
+    overflow: hidden;
 }
 
 .theme-cards-container {
     display: flex;
-    justify-content: center;
-    align-items: flex-end; /* 모든 카드가 하단에 정렬 */
     padding: 2rem 0 1rem;
     position: relative;
-    height: 350px; /* 높이 추가 증가 */
+    height: 490px; /* 높이 1.4배 증가 */
+    overflow-x: auto;
+    scroll-behavior: smooth;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none; /* Firefox에서 스크롤바 숨김 */
+    -ms-overflow-style: none; /* IE/Edge에서 스크롤바 숨김 */
 }
 
-.theme-card {
-    width: 210px; /* 카드 너비 추가 증가 */
-    height: 270px; /* 카드 높이 추가 증가 */
-    margin: 0 -5px; /* 겹쳐지는 효과 */
-    position: absolute;
-    transition: all 0.3s ease;
-    cursor: pointer;
-    transform-origin: bottom center;
-    z-index: 1;
-}
-
-/* 테마 네비게이션 버튼 */
-.theme-nav-btn {
-    position: absolute;
-    top: 50%;
-    transform: translateY(-50%);
-    z-index: 10;
-    width: 48px;
-    height: 48px;
-    border-radius: 50%;
-    background-color: rgba(0, 0, 0, 0.5);
-    border: 2px solid rgba(255, 255, 255, 0.2);
-    color: white;
-    font-size: 1.5rem;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    cursor: pointer;
-    transition: all 0.3s ease;
-    box-shadow: 0 0 15px rgba(0, 0, 0, 0.3);
-}
-
-.theme-nav-btn:hover {
-    background-color: rgba(74, 111, 220, 0.7);
-    transform: translateY(-50%) scale(1.1);
-}
-
-.theme-nav-prev {
-    left: 10px;
-}
-
-.theme-nav-next {
-    right: 10px;
-}
-
-/* 활성/비활성 세트 스타일 */
-.active-set {
-    display: block;
-}
-
-.blurred-set {
+/* Webkit 브라우저에서 스크롤바 숨김 */
+.theme-cards-container::-webkit-scrollbar {
     display: none;
 }
 
-/* 블러 세트가 활성화될 때 */
-.blurred-set.active-set {
-    display: block;
-    filter: blur(3px);
+.theme-card {
+    width: 294px; /* 1.4배 증가 210 * 1.4 */
+    height: 378px; /* 1.4배 증가 270 * 1.4 */
+    margin: 0 10px; /* 카드 간 간격 설정 */
+    position: relative; /* absolute 대신 relative 사용 */
+    transition: all 0.5s ease;
+    cursor: pointer;
+    transform-origin: bottom center;
+    flex-shrink: 0; /* 축소 방지 */
+    display: inline-block;
 }
 
-/* 활성화된 카드 세트의 배치 */
-.active-set:nth-child(2) {
-    transform: translateX(-280px) rotate(-20deg) scale(0.85);
+/* 활성/비활성 세트 스타일 */
+.active-set, .blurred-set {
+    display: inline-block;
 }
 
-.active-set:nth-child(3) {
-    transform: translateX(-140px) rotate(-10deg) scale(0.9);
+/* 스크롤 특수 효과 */
+.theme-card:nth-child(n+6):not(:hover) {
+    position: relative;
 }
 
-.active-set:nth-child(4) {
-    transform: translateX(0) rotate(0) scale(1);
-    z-index: 5;
+.theme-card:nth-child(n+6):not(:hover)::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.3);
+    backdrop-filter: blur(3px);
+    -webkit-backdrop-filter: blur(3px);
+    border-radius: 12px;
+    transition: opacity 0.3s ease;
 }
 
-.active-set:nth-child(5) {
-    transform: translateX(140px) rotate(10deg) scale(0.9);
-}
-
-.active-set:nth-child(6) {
-    transform: translateX(280px) rotate(20deg) scale(0.85);
+.theme-card:nth-child(n+6):hover::after {
+    opacity: 0;
 }
 
 .theme-card-inner {
