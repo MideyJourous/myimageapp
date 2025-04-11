@@ -6,27 +6,58 @@ from flask import Flask, request, jsonify, send_from_directory, send_file
 import openai
 import webbrowser
 from threading import Timer
+from flask_sqlalchemy import SQLAlchemy
+from sqlalchemy.sql import func
+from dotenv import load_dotenv
+
+# .env 파일 로드
+load_dotenv()
 
 app = Flask(__name__, static_folder='../build')
+
+# 데이터베이스 설정
+app.config['SQLALCHEMY_DATABASE_URI'] = os.environ.get('DATABASE_URL')
+app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+db = SQLAlchemy(app)
+
+# 이미지 모델 정의
+class Image(db.Model):
+    __tablename__ = 'images'
+    
+    id = db.Column(db.String(50), primary_key=True)
+    prompt = db.Column(db.Text, nullable=False)
+    image_url = db.Column(db.String(500), nullable=False)
+    created_at = db.Column(db.DateTime(timezone=True), server_default=func.now())
+    
+    def to_dict(self):
+        return {
+            'id': self.id,
+            'prompt': self.prompt,
+            'imageUrl': self.image_url,
+            'createdAt': self.created_at.isoformat()
+        }
+
+# 데이터베이스 테이블 생성
+with app.app_context():
+    db.create_all()
 
 # OpenAI API 키 설정
 openai.api_key = os.environ.get('OPENAI_API_KEY')
 
-# 이미지 저장 폴더
-STORAGE_DIR = 'storage'
-os.makedirs(STORAGE_DIR, exist_ok=True)
-IMAGES_JSON_PATH = os.path.join(STORAGE_DIR, 'images.json')
-
 # 이미지 데이터 저장 및 불러오기 함수
 def load_images():
-    if os.path.exists(IMAGES_JSON_PATH):
-        with open(IMAGES_JSON_PATH, 'r', encoding='utf-8') as f:
-            return json.load(f)
-    return []
+    images = Image.query.order_by(Image.created_at.desc()).all()
+    return [image.to_dict() for image in images]
 
-def save_images(images):
-    with open(IMAGES_JSON_PATH, 'w', encoding='utf-8') as f:
-        json.dump(images, f, ensure_ascii=False, indent=2)
+def save_image(image_data):
+    image = Image(
+        id=image_data['id'],
+        prompt=image_data['prompt'],
+        image_url=image_data['imageUrl']
+    )
+    db.session.add(image)
+    db.session.commit()
+    return image.to_dict()
 
 # API 라우트
 @app.route('/api/generate-image', methods=['POST'])
@@ -79,7 +110,7 @@ def get_images():
         return jsonify({"error": str(e)}), 500
 
 @app.route('/api/images', methods=['POST'])
-def save_image():
+def save_image_api():
     try:
         data = request.json
         prompt = data.get('prompt', '')
@@ -88,7 +119,6 @@ def save_image():
         if not url or not prompt:
             return jsonify({"error": "URL과 설명이 필요합니다"}), 400
             
-        images = load_images()
         image_id = str(int(datetime.now().timestamp() * 1000))
         
         new_image = {
@@ -98,29 +128,38 @@ def save_image():
             "createdAt": datetime.now().isoformat()
         }
         
-        images.insert(0, new_image)
-        save_images(images)
+        # 데이터베이스에 저장
+        saved_image = save_image(new_image)
         
-        return jsonify(new_image)
+        return jsonify(saved_image)
     except Exception as e:
+        print(f"Error saving image: {e}")
         return jsonify({"error": str(e)}), 500
 
 @app.route('/api/images/<image_id>', methods=['DELETE'])
 def delete_image(image_id):
     try:
-        images = load_images()
-        images = [img for img in images if img['id'] != image_id]
-        save_images(images)
-        return jsonify({"success": True})
+        # 데이터베이스에서 이미지 삭제
+        image = Image.query.get(image_id)
+        if image:
+            db.session.delete(image)
+            db.session.commit()
+            return jsonify({"success": True})
+        else:
+            return jsonify({"error": "이미지를 찾을 수 없습니다"}), 404
     except Exception as e:
+        print(f"Error deleting image: {e}")
         return jsonify({"error": str(e)}), 500
 
 @app.route('/api/images/clear', methods=['DELETE'])
 def clear_images():
     try:
-        save_images([])
+        # 모든 이미지 삭제
+        db.session.query(Image).delete()
+        db.session.commit()
         return jsonify({"success": True})
     except Exception as e:
+        print(f"Error clearing images: {e}")
         return jsonify({"error": str(e)}), 500
 
 # React 앱 서빙
