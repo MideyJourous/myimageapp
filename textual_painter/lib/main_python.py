@@ -4,7 +4,6 @@ import requests
 import base64
 from datetime import datetime
 from flask import Flask, request, jsonify, send_from_directory, send_file
-import openai
 import webbrowser
 from threading import Timer
 from flask_sqlalchemy import SQLAlchemy
