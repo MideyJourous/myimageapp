@@ -2,12 +2,14 @@ class GeneratedImage {
   final String id;
   final String prompt;
   final String imageUrl;
+  final String? model; // SDXL 또는 Flux Schnell
   final DateTime createdAt;
 
   GeneratedImage({
     required this.id,
     required this.prompt,
     required this.imageUrl,
+    this.model,
     required this.createdAt,
   });
 
@@ -17,6 +19,7 @@ class GeneratedImage {
       'id': id,
       'prompt': prompt,
       'imageUrl': imageUrl,
+      'model': model,
       'createdAt': createdAt.toIso8601String(),
     };
   }
@@ -27,6 +30,7 @@ class GeneratedImage {
       id: json['id'],
       prompt: json['prompt'],
       imageUrl: json['imageUrl'],
+      model: json['model'],
       createdAt: DateTime.parse(json['createdAt']),
     );
   }

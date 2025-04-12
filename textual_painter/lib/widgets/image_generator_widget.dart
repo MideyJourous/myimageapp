@@ -85,13 +85,15 @@ class _ImageGeneratorWidgetState extends State<ImageGeneratorWidget> {
                   border: OutlineInputBorder(),
                   contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                 ),
-                value: 'sdxl', // 기본값
+                value: imageProvider.selectedModel, // 현재 선택된 모델
                 items: const [
                   DropdownMenuItem(value: 'sdxl', child: Text('SDXL')),
                   DropdownMenuItem(value: 'flux-schnell', child: Text('Flux Schnell')),
                 ],
                 onChanged: (value) {
-                  // 모델 선택 처리
+                  if (value != null) {
+                    imageProvider.setSelectedModel(value);
+                  }
                 },
               ),
 

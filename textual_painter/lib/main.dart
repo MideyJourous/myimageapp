@@ -1,12 +1,19 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 
 import 'providers/image_provider.dart';
 import 'providers/theme_provider.dart';
 import 'screens/home_screen.dart';
 
-void main() {
+Future<void> main() async {
+  // Flutter 바인딩 초기화
+  WidgetsFlutterBinding.ensureInitialized();
+  
+  // 환경변수 로드
+  await dotenv.load(fileName: '.env');
+  
   runApp(const MyApp());
 }
 

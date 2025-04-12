@@ -1,42 +1,55 @@
 name: textual_painter
-description: A text-to-image generator application using Flutter and OpenAI.
-publish_to: 'none'
+description: AI 기반 텍스트-이미지 생성 앱
+
+# 앱 버전 및 빌드 번호
 version: 1.0.0+1
 
 environment:
-  sdk: ">=2.18.0 <3.0.0"
+  sdk: ">=2.17.0 <3.0.0"
 
 dependencies:
   flutter:
     sdk: flutter
   flutter_localizations:
     sdk: flutter
-  cupertino_icons: ^1.0.2
-  provider: ^6.0.3
-  http: ^0.13.5
-  shared_preferences: ^2.0.15
-  path_provider: ^2.0.11
-  image_gallery_saver: ^1.7.1
-  dio: ^4.0.6
-  flutter_spinkit: ^5.1.0
-  intl: ^0.17.0
+    
+  # UI 관련
+  cupertino_icons: ^1.0.5
+  flutter_spinkit: ^5.2.0
+  
+  # 상태 관리
+  provider: ^6.0.5
+  
+  # 네트워크 요청
+  http: ^1.1.0
+  dio: ^5.3.2
+  
+  # 데이터 저장 및 로컬 스토리지
+  shared_preferences: ^2.2.0
+  path_provider: ^2.0.15
+  
+  # 이미지 관련
+  image_gallery_saver: ^2.0.3
+  
+  # 환경변수 및 설정
+  flutter_dotenv: ^5.1.0
+  
+  # 언어 번역
+  translator: ^0.1.7
 
 dev_dependencies:
   flutter_test:
     sdk: flutter
-  flutter_lints: ^2.0.0
-
+  flutter_lints: ^2.0.2
+  
 flutter:
   uses-material-design: true
+  
+  # 에셋 설정
   assets:
-    - assets/images/
-  fonts:
-    - family: NotoSansKR
-      fonts:
-        - asset: assets/fonts/NotoSansKR-Regular.otf
-        - asset: assets/fonts/NotoSansKR-Bold.otf
-          weight: 700
-        - asset: assets/fonts/NotoSansKR-Medium.otf
-          weight: 500
-        - asset: assets/fonts/NotoSansKR-Light.otf
-          weight: 300
+    - .env
+    - assets/
+    - assets/themes/
+    
+  # 테마 카드용 더미 이미지 생성
+  generate: true

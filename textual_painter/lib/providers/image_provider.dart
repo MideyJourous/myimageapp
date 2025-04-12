@@ -9,12 +9,20 @@ class ImageGeneratorProvider extends ChangeNotifier {
   String? _error;
   bool _isLoading = false;
   List<GeneratedImage> _savedImages = [];
+  String _selectedModel = 'sdxl'; // 기본 모델: SDXL
 
   // 게터
   String? get generatedImageUrl => _generatedImageUrl;
   String? get error => _error;
   bool get isLoading => _isLoading;
   List<GeneratedImage> get savedImages => _savedImages;
+  String get selectedModel => _selectedModel;
+
+  // 모델 선택
+  void setSelectedModel(String model) {
+    _selectedModel = model;
+    notifyListeners();
+  }
 
   // 이미지 생성
   Future<void> generateImage(String prompt) async {
@@ -23,8 +31,8 @@ class ImageGeneratorProvider extends ChangeNotifier {
       _clearError();
       _generatedImageUrl = null;
       
-      // API 호출
-      final imageUrl = await _imageService.generateImage(prompt);
+      // API 호출 (선택된 모델 사용)
+      final imageUrl = await _imageService.generateImage(prompt, model: _selectedModel);
       
       _generatedImageUrl = imageUrl;
       notifyListeners();
@@ -41,10 +49,17 @@ class ImageGeneratorProvider extends ChangeNotifier {
     if (_generatedImageUrl == null) return;
     
     try {
+      // 이미지 URL에서 모델 정보 추출
+      String model = _selectedModel;
+      if (_generatedImageUrl!.contains('?model=')) {
+        model = _generatedImageUrl!.split('?model=')[1];
+      }
+      
       final newImage = GeneratedImage(
         id: DateTime.now().millisecondsSinceEpoch.toString(),
         prompt: prompt,
         imageUrl: _generatedImageUrl!,
+        model: model,
         createdAt: DateTime.now(),
       );
       

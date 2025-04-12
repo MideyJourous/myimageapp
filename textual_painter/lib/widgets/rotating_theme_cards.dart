@@ -34,31 +34,30 @@ class RotatingThemeCards extends StatefulWidget {
 class _RotatingThemeCardsState extends State<RotatingThemeCards>
     with SingleTickerProviderStateMixin {
   late AnimationController _animationController;
-  late int _selectedIndex;
-  late double _angle;
-  late double _radius;
-  late Size _containerSize;
-  late Offset _center;
+  int _selectedIndex = 0;
+  double _radius = 0.0;
+  double _anglePerCard = 0.0;
+  Size _containerSize = Size.zero;
+  Offset _center = Offset.zero;
   
   // 드래그 관련 변수
-  double _startDragX = 0;
-  double _currentAngle = 0;
   bool _isDragging = false;
+  double _startDragX = 0;
+  double _currentRotation = 0.0;
 
   @override
   void initState() {
     super.initState();
-    _selectedIndex = 0;
     _animationController = AnimationController(
       vsync: this,
       duration: const Duration(milliseconds: 300),
     );
+    _animationController.addListener(() {
+      setState(() {});
+    });
     
-    // 화면 크기에 따라 반지름 조정 (나중에 build에서 다시 계산됨)
-    _radius = 400;
-    _angle = 2 * pi / widget.cards.length;
-    _containerSize = Size(800, 600); // 초기값 설정
-    _center = Offset(_containerSize.width / 2, _containerSize.height * 0.7);
+    // 카드 각도 계산
+    _anglePerCard = pi / 12; // 15도씩 회전 (변경 가능)
   }
 
   @override
@@ -68,25 +67,33 @@ class _RotatingThemeCardsState extends State<RotatingThemeCards>
   }
 
   void _rotateToNextCard() {
-    setState(() {
-      _selectedIndex = (_selectedIndex + 1) % widget.cards.length;
-      _animateRotation();
-    });
+    if (_selectedIndex < widget.cards.length - 1) {
+      setState(() {
+        _selectedIndex++;
+        _animateRotation();
+        widget.onCardSelected(widget.cards[_selectedIndex]);
+      });
+    }
   }
 
   void _rotateToPreviousCard() {
-    setState(() {
-      _selectedIndex = (_selectedIndex - 1 + widget.cards.length) % widget.cards.length;
-      _animateRotation();
-    });
+    if (_selectedIndex > 0) {
+      setState(() {
+        _selectedIndex--;
+        _animateRotation();
+        widget.onCardSelected(widget.cards[_selectedIndex]);
+      });
+    }
   }
 
   void _rotateToIndex(int index) {
-    setState(() {
-      _selectedIndex = index;
-      _animateRotation();
-      widget.onCardSelected(widget.cards[_selectedIndex]);
-    });
+    if (index != _selectedIndex && index >= 0 && index < widget.cards.length) {
+      setState(() {
+        _selectedIndex = index;
+        _animateRotation();
+        widget.onCardSelected(widget.cards[_selectedIndex]);
+      });
+    }
   }
 
   void _animateRotation() {
@@ -99,8 +106,8 @@ class _RotatingThemeCardsState extends State<RotatingThemeCards>
     // 화면 크기에 맞게 반지름 조정
     final screenSize = MediaQuery.of(context).size;
     _containerSize = Size(screenSize.width, screenSize.width * 0.8);
-    _center = Offset(_containerSize.width / 2, _containerSize.height * 0.6);
-    _radius = _containerSize.width * 0.4;
+    _center = Offset(_containerSize.width / 2, _containerSize.height * 0.5);
+    _radius = _containerSize.width * 0.35;
 
     return SizedBox(
       width: _containerSize.width,
@@ -109,66 +116,75 @@ class _RotatingThemeCardsState extends State<RotatingThemeCards>
         onHorizontalDragStart: (details) {
           _isDragging = true;
           _startDragX = details.localPosition.dx;
+          _currentRotation = 0.0;
         },
         onHorizontalDragUpdate: (details) {
           if (_isDragging) {
             final deltaX = details.localPosition.dx - _startDragX;
-            if (deltaX.abs() > 20) {
-              _startDragX = details.localPosition.dx;
-              if (deltaX > 0) {
-                _rotateToPreviousCard();
-              } else {
-                _rotateToNextCard();
-              }
+            _currentRotation += deltaX * 0.01;
+            _startDragX = details.localPosition.dx;
+            
+            // 일정 임계값을 넘으면 다음 또는 이전 카드로 이동
+            if (_currentRotation > 0.3) {
+              _rotateToPreviousCard();
+              _currentRotation = 0.0;
+            } else if (_currentRotation < -0.3) {
+              _rotateToNextCard();
+              _currentRotation = 0.0;
             }
+            
+            setState(() {});
           }
         },
         onHorizontalDragEnd: (details) {
           _isDragging = false;
+          _currentRotation = 0.0;
         },
         child: Stack(
           children: List.generate(widget.cards.length, (index) {
-            // 선택된 카드 인덱스를 기준으로 각도 계산
-            final angleOffset = (index - _selectedIndex) * (pi / 8);
+            // 선택된 인덱스와의 거리
+            final distanceFromSelected = index - _selectedIndex;
             
-            // 애니메이션 진행에 따라 각도 보간
-            final angleValue = _animationController.isDismissed
-                ? angleOffset
-                : lerpDouble(angleOffset, 0, _animationController.value) ?? angleOffset;
+            // 각 카드의 각도 (선택된 카드는 0도, 그 외에는 각도 적용)
+            final angle = _anglePerCard * distanceFromSelected;
             
-            // 카드 위치 계산 (원형 배치)
-            final x = _center.dx + _radius * sin(angleValue);
-            final y = _center.dy - _radius * (1 - cos(angleValue).abs()) * 0.5;
+            // 반원 형태의 위치 계산
+            final offset = Offset(
+              _radius * sin(angle),
+              _radius * (1 - cos(angle).abs()) * 0.7,
+            );
+            
+            // 중앙 카드와의 거리
+            final distance = (index - _selectedIndex).abs();
             
             // 스케일 계산 (중앙에 가까울수록 크게 표시)
-            final distance = (index - _selectedIndex).abs();
-            final scale = distance == 0 ? 1.0 : 0.85;
+            final scale = distance == 0 ? 1.0 : 0.8;
             
-            // z-index 계산 (중앙에 가까울수록 위에 표시)
-            final zIndex = widget.cards.length - distance.toDouble();
+            // Z-index 계산 (중앙에 가까울수록 위에 표시)
+            final zIndex = 100 - distance * 10;
             
-            // 투명도 계산 (중앙에 가까울수록 선명하게)
-            final opacity = 1.0 - (distance * 0.2).clamp(0.0, 0.3);
-            
-            return Positioned(
-              left: x - (widget.cardWidth / 2),
-              top: y - (widget.cardHeight / 2),
-              width: widget.cardWidth,
-              height: widget.cardHeight,
-              child: Transform.rotate(
-                angle: angleValue,
-                child: Transform.scale(
-                  scale: scale,
-                  child: Opacity(
-                    opacity: opacity,
-                    child: GestureDetector(
-                      onTap: () => _rotateToIndex(index),
-                      child: Stack(
-                        children: [
-                          Card(
-                            elevation: index == _selectedIndex ? 8 : 4,
+            return Positioned.fill(
+              child: Align(
+                alignment: Alignment.center,
+                child: Transform.translate(
+                  offset: Offset(_center.dx + offset.dx - (_containerSize.width / 2),
+                                 offset.dy),
+                  child: Transform.rotate(
+                    // 중앙 카드는 회전 없이, 양 옆의 카드는 바깥쪽으로 10도씩 기울임
+                    angle: distanceFromSelected == 0 ? 0 : angle,
+                    child: Transform.scale(
+                      scale: scale,
+                      child: Container(
+                        width: widget.cardWidth,
+                        height: widget.cardHeight,
+                        margin: const EdgeInsets.symmetric(horizontal: -30), // 겹치기 효과
+                        child: GestureDetector(
+                          onTap: () => _rotateToIndex(index),
+                          child: Card(
+                            elevation: index == _selectedIndex ? 8.0 : 4.0,
+                            margin: EdgeInsets.zero,
                             shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(15),
+                              borderRadius: BorderRadius.circular(16),
                               side: BorderSide(
                                 color: index == _selectedIndex
                                     ? Theme.of(context).primaryColor
@@ -177,29 +193,57 @@ class _RotatingThemeCardsState extends State<RotatingThemeCards>
                               ),
                             ),
                             child: ClipRRect(
-                              borderRadius: BorderRadius.circular(15),
+                              borderRadius: BorderRadius.circular(16),
                               child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.stretch,
                                 children: [
+                                  // 이미지 영역
                                   Expanded(
                                     flex: 8,
-                                    child: Image.asset(
-                                      widget.cards[index].imagePath,
-                                      fit: BoxFit.cover,
-                                      errorBuilder: (context, error, stackTrace) {
-                                        return Container(
-                                          color: Colors.grey.shade800,
-                                          child: Center(
-                                            child: Icon(
-                                              Icons.image_not_supported,
-                                              color: Colors.white70,
-                                              size: 48,
+                                    child: Stack(
+                                      fit: StackFit.expand,
+                                      children: [
+                                        // 이미지
+                                        Image.asset(
+                                          widget.cards[index].imagePath,
+                                          fit: BoxFit.cover,
+                                          errorBuilder: (context, error, stackTrace) {
+                                            // 이미지 로드 실패 시 대체 표시
+                                            return Container(
+                                              color: Colors.grey.shade800,
+                                              child: const Center(
+                                                child: Icon(
+                                                  Icons.image_not_supported,
+                                                  color: Colors.white70,
+                                                  size: 48,
+                                                ),
+                                              ),
+                                            );
+                                          },
+                                        ),
+                                        
+                                        // 선택된 카드에 표시할 체크 마크
+                                        if (index == _selectedIndex)
+                                          Positioned(
+                                            top: 12,
+                                            right: 12,
+                                            child: Container(
+                                              padding: const EdgeInsets.all(4),
+                                              decoration: BoxDecoration(
+                                                color: Theme.of(context).primaryColor,
+                                                shape: BoxShape.circle,
+                                              ),
+                                              child: const Icon(
+                                                Icons.check,
+                                                color: Colors.white,
+                                                size: 20,
+                                              ),
                                             ),
                                           ),
-                                        );
-                                      },
+                                      ],
                                     ),
                                   ),
+                                  
+                                  // 텍스트 영역
                                   Expanded(
                                     flex: 2,
                                     child: Container(
@@ -207,10 +251,11 @@ class _RotatingThemeCardsState extends State<RotatingThemeCards>
                                           ? Theme.of(context).primaryColor
                                           : Colors.grey.shade800,
                                       padding: const EdgeInsets.all(8.0),
+                                      width: double.infinity,
                                       child: Center(
                                         child: Text(
                                           widget.cards[index].title,
-                                          style: TextStyle(
+                                          style: const TextStyle(
                                             color: Colors.white,
                                             fontWeight: FontWeight.bold,
                                             fontSize: 16,
@@ -224,46 +269,16 @@ class _RotatingThemeCardsState extends State<RotatingThemeCards>
                               ),
                             ),
                           ),
-                          // 선택된 카드에 표시할 선택 표시
-                          if (index == _selectedIndex)
-                            Positioned(
-                              top: 10,
-                              right: 10,
-                              child: Container(
-                                padding: EdgeInsets.all(4),
-                                decoration: BoxDecoration(
-                                  color: Theme.of(context).primaryColor,
-                                  shape: BoxShape.circle,
-                                ),
-                                child: Icon(
-                                  Icons.check,
-                                  color: Colors.white,
-                                  size: 20,
-                                ),
-                              ),
-                            ),
-                        ],
+                        ),
                       ),
                     ),
                   ),
                 ),
               ),
             );
-          })..sort((a, b) {
-            // z-index 순서로 정렬 (중앙에 가까운 카드가 위에 표시되도록)
-            final indexA = (a as Positioned).child as Transform;
-            final indexB = (b as Positioned).child as Transform;
-            final scaleA = (indexA.child as Transform).scale;
-            final scaleB = (indexB.child as Transform).scale;
-            return scaleB!.compareTo(scaleA!);
           }),
         ),
       ),
     );
-  }
-  
-  // 애니메이션 보간을 위한 유틸리티 메서드
-  double? lerpDouble(double a, double b, double t) {
-    return a + (b - a) * t;
   }
 }
