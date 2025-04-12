@@ -5,7 +5,6 @@ import 'package:flutter_spinkit/flutter_spinkit.dart';
 import '../providers/image_provider.dart';
 import '../providers/theme_provider.dart';
 import '../widgets/rotating_theme_cards.dart';
-import '../models/theme_card_model.dart';
 
 class ImageGeneratorWidget extends StatefulWidget {
   const ImageGeneratorWidget({Key? key}) : super(key: key);
@@ -19,17 +18,17 @@ class _ImageGeneratorWidgetState extends State<ImageGeneratorWidget> {
   final _formKey = GlobalKey<FormState>();
   final int _maxPromptLength = 1000;
   bool _isSaved = false;
-  
+
   @override
   void initState() {
     super.initState();
-    
+
     // 지연 설정해서 빌드 컨텍스트 사용
     WidgetsBinding.instance.addPostFrameCallback((_) {
       final themeProvider = Provider.of<ThemeProvider>(context, listen: false);
       // 초기화 처리
       themeProvider.initialize();
-      
+
       // 초기 프롬프트 설정
       setState(() {
         _promptController.text = themeProvider.currentPrompt;
@@ -48,15 +47,15 @@ class _ImageGeneratorWidgetState extends State<ImageGeneratorWidget> {
     final imageProvider = Provider.of<ImageGeneratorProvider>(context);
     final themeProvider = Provider.of<ThemeProvider>(context);
     final theme = Theme.of(context);
-    
+
     // ThemeCardModel을 RotatingThemeCards 위젯에서 사용하는 ThemeCard로 변환
-    final themeCards = themeProvider.themeCards.map((card) => 
-      ThemeCard(
-        title: card.title,
-        imagePath: card.imagePath,
-        prompt: card.prompt,
-      )
-    ).toList();
+    final themeCards = themeProvider.themeCards
+        .map((card) => ThemeCard(
+              title: card.title,
+              imagePath: card.imagePath,
+              prompt: card.prompt,
+            ))
+        .toList();
 
     return SingleChildScrollView(
       child: Padding(
@@ -80,20 +79,22 @@ class _ImageGeneratorWidgetState extends State<ImageGeneratorWidget> {
                   },
                 ),
               ),
-              
+
               const SizedBox(height: 20),
-              
+
               // 이미지 모델 선택 (드롭다운)
               DropdownButtonFormField<String>(
                 decoration: const InputDecoration(
                   labelText: '이미지 모델',
                   border: OutlineInputBorder(),
-                  contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                  contentPadding:
+                      EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                 ),
                 value: imageProvider.selectedModel, // 현재 선택된 모델
                 items: const [
                   DropdownMenuItem(value: 'sdxl', child: Text('SDXL')),
-                  DropdownMenuItem(value: 'flux-schnell', child: Text('Flux Schnell')),
+                  DropdownMenuItem(
+                      value: 'flux-schnell', child: Text('Flux Schnell')),
                 ],
                 onChanged: (value) {
                   if (value != null) {
@@ -110,7 +111,8 @@ class _ImageGeneratorWidgetState extends State<ImageGeneratorWidget> {
                 decoration: InputDecoration(
                   labelText: '이미지 설명',
                   hintText: '만들고 싶은 이미지를 자세히 설명해주세요...',
-                  counterText: '${_promptController.text.length}/$_maxPromptLength',
+                  counterText:
+                      '${_promptController.text.length}/$_maxPromptLength',
                   prefixIcon: const Icon(Icons.description),
                   border: const OutlineInputBorder(),
                 ),
@@ -158,7 +160,8 @@ class _ImageGeneratorWidgetState extends State<ImageGeneratorWidget> {
                             _isSaved = false;
                           });
 
-                          await imageProvider.generateImage(_promptController.text);
+                          await imageProvider
+                              .generateImage(_promptController.text);
                         }
                       },
                 icon: imageProvider.isLoading
@@ -229,7 +232,8 @@ class _ImageGeneratorWidgetState extends State<ImageGeneratorWidget> {
                             height: 300,
                             child: Center(
                               child: CircularProgressIndicator(
-                                value: loadingProgress.expectedTotalBytes != null
+                                value: loadingProgress.expectedTotalBytes !=
+                                        null
                                     ? loadingProgress.cumulativeBytesLoaded /
                                         loadingProgress.expectedTotalBytes!
                                     : null,
@@ -272,14 +276,16 @@ class _ImageGeneratorWidgetState extends State<ImageGeneratorWidget> {
                           icon: const Icon(Icons.save),
                           label: Text(_isSaved ? '저장됨' : '저장하기'),
                           style: ElevatedButton.styleFrom(
-                            backgroundColor: _isSaved ? Colors.grey : Colors.green,
+                            backgroundColor:
+                                _isSaved ? Colors.grey : Colors.green,
                           ),
                         ),
 
                         // Download Button
                         ElevatedButton.icon(
                           onPressed: () async {
-                            final success = await imageProvider.saveImageToGallery();
+                            final success =
+                                await imageProvider.saveImageToGallery();
                             if (success) {
                               ScaffoldMessenger.of(context).showSnackBar(
                                 const SnackBar(

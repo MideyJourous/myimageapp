@@ -10,10 +10,10 @@ import 'screens/home_screen.dart';
 Future<void> main() async {
   // Flutter 바인딩 초기화
   WidgetsFlutterBinding.ensureInitialized();
-  
+
   // 환경변수 로드
   await dotenv.load(fileName: '.env');
-  
+
   runApp(const MyApp());
 }
 
@@ -54,7 +54,6 @@ class MyApp extends StatelessWidget {
           colorScheme: ColorScheme.dark(
             primary: Colors.blue,
             secondary: Colors.blueAccent,
-            background: Colors.grey.shade900,
             surface: Colors.grey.shade800,
           ),
           brightness: Brightness.dark,
@@ -83,10 +82,7 @@ class MyApp extends StatelessWidget {
           GlobalWidgetsLocalizations.delegate,
           GlobalCupertinoLocalizations.delegate,
         ],
-        supportedLocales: const [
-          Locale('ko', 'KR'),
-          Locale('en', 'US'),
-        ],
+        supportedLocales: const [Locale('ko', 'KR'), Locale('en', 'US')],
         locale: const Locale('ko', 'KR'),
         home: const HomeScreen(),
         debugShowCheckedModeBanner: false,

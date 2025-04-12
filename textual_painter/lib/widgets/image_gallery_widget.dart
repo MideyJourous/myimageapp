@@ -1,3 +1,4 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../providers/image_provider.dart';
@@ -14,10 +15,11 @@ class _ImageGalleryWidgetState extends State<ImageGalleryWidget> {
   @override
   void initState() {
     super.initState();
-    
+
     // 이미지 목록 로드
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      Provider.of<ImageGeneratorProvider>(context, listen: false).loadSavedImages();
+      Provider.of<ImageGeneratorProvider>(context, listen: false)
+          .loadSavedImages();
     });
   }
 
@@ -25,7 +27,7 @@ class _ImageGalleryWidgetState extends State<ImageGalleryWidget> {
   Widget build(BuildContext context) {
     final imageProvider = Provider.of<ImageGeneratorProvider>(context);
     final images = imageProvider.savedImages;
-    
+
     return Column(
       children: [
         // 상단 정보 및 컨트롤
@@ -50,17 +52,17 @@ class _ImageGalleryWidgetState extends State<ImageGalleryWidget> {
             ],
           ),
         ),
-        
+
         // 갤러리 내용
         Expanded(
-          child: images.isEmpty 
-            ? _buildEmptyGallery() 
-            : _buildGalleryGrid(images, imageProvider),
+          child: images.isEmpty
+              ? _buildEmptyGallery()
+              : _buildGalleryGrid(images, imageProvider),
         ),
       ],
     );
   }
-  
+
   // 빈 갤러리 표시
   Widget _buildEmptyGallery() {
     return Center(
@@ -92,9 +94,10 @@ class _ImageGalleryWidgetState extends State<ImageGalleryWidget> {
       ),
     );
   }
-  
+
   // 갤러리 그리드 표시
-  Widget _buildGalleryGrid(List<GeneratedImage> images, ImageGeneratorProvider provider) {
+  Widget _buildGalleryGrid(
+      List<GeneratedImage> images, ImageGeneratorProvider provider) {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 8.0),
       child: GridView.builder(
@@ -112,9 +115,10 @@ class _ImageGalleryWidgetState extends State<ImageGalleryWidget> {
       ),
     );
   }
-  
+
   // 각 이미지 카드 위젯
-  Widget _buildImageCard(GeneratedImage image, ImageGeneratorProvider provider) {
+  Widget _buildImageCard(
+      GeneratedImage image, ImageGeneratorProvider provider) {
     return GestureDetector(
       onTap: () => _showImageDetails(context, image),
       child: Card(
@@ -133,23 +137,50 @@ class _ImageGalleryWidgetState extends State<ImageGalleryWidget> {
                 fit: StackFit.expand,
                 children: [
                   // 이미지
-                  Image.network(
-                    image.imageUrl,
-                    fit: BoxFit.cover,
-                    errorBuilder: (context, error, stackTrace) {
-                      return Container(
-                        color: Colors.grey.shade300,
-                        child: const Center(
-                          child: Icon(
-                            Icons.broken_image,
-                            color: Colors.grey,
-                            size: 40,
-                          ),
-                        ),
-                      );
-                    },
+                  Expanded(
+                    flex: 4,
+                    child: ClipRRect(
+                      borderRadius: const BorderRadius.vertical(
+                        top: Radius.circular(16),
+                      ),
+                      child: image.imageUrl.startsWith('file://')
+                          ? Image.file(
+                              File(image.imageUrl
+                                  .replaceFirst('file://', '')
+                                  .split('?')[0]),
+                              fit: BoxFit.cover,
+                              errorBuilder: (context, error, stackTrace) {
+                                return Container(
+                                  color: Colors.grey.shade300,
+                                  child: const Center(
+                                    child: Icon(
+                                      Icons.broken_image,
+                                      color: Colors.grey,
+                                      size: 64,
+                                    ),
+                                  ),
+                                );
+                              },
+                            )
+                          : Image.network(
+                              image.imageUrl,
+                              fit: BoxFit.cover,
+                              errorBuilder: (context, error, stackTrace) {
+                                return Container(
+                                  color: Colors.grey.shade300,
+                                  child: const Center(
+                                    child: Icon(
+                                      Icons.broken_image,
+                                      color: Colors.grey,
+                                      size: 64,
+                                    ),
+                                  ),
+                                );
+                              },
+                            ),
+                    ),
                   ),
-                  
+
                   // 모델 배지
                   if (image.model != null)
                     Positioned(
@@ -174,13 +205,14 @@ class _ImageGalleryWidgetState extends State<ImageGalleryWidget> {
                         ),
                       ),
                     ),
-                    
+
                   // 삭제 버튼
                   Positioned(
                     bottom: 8,
                     right: 8,
                     child: GestureDetector(
-                      onTap: () => _confirmDeleteImage(context, image.id, provider),
+                      onTap: () =>
+                          _confirmDeleteImage(context, image.id, provider),
                       child: Container(
                         padding: const EdgeInsets.all(6),
                         decoration: BoxDecoration(
@@ -198,7 +230,7 @@ class _ImageGalleryWidgetState extends State<ImageGalleryWidget> {
                 ],
               ),
             ),
-            
+
             // 프롬프트 (간략히)
             Expanded(
               flex: 1,
@@ -239,25 +271,44 @@ class _ImageGalleryWidgetState extends State<ImageGalleryWidget> {
                   borderRadius: const BorderRadius.vertical(
                     top: Radius.circular(16),
                   ),
-                  child: Image.network(
-                    image.imageUrl,
-                    fit: BoxFit.cover,
-                    errorBuilder: (context, error, stackTrace) {
-                      return Container(
-                        color: Colors.grey.shade300,
-                        child: const Center(
-                          child: Icon(
-                            Icons.broken_image,
-                            color: Colors.grey,
-                            size: 64,
-                          ),
+                  child: image.imageUrl.startsWith('file://')
+                      ? Image.file(
+                          File(image.imageUrl
+                              .replaceFirst('file://', '')
+                              .split('?')[0]),
+                          fit: BoxFit.cover,
+                          errorBuilder: (context, error, stackTrace) {
+                            return Container(
+                              color: Colors.grey.shade300,
+                              child: const Center(
+                                child: Icon(
+                                  Icons.broken_image,
+                                  color: Colors.grey,
+                                  size: 64,
+                                ),
+                              ),
+                            );
+                          },
+                        )
+                      : Image.network(
+                          image.imageUrl,
+                          fit: BoxFit.cover,
+                          errorBuilder: (context, error, stackTrace) {
+                            return Container(
+                              color: Colors.grey.shade300,
+                              child: const Center(
+                                child: Icon(
+                                  Icons.broken_image,
+                                  color: Colors.grey,
+                                  size: 64,
+                                ),
+                              ),
+                            );
+                          },
                         ),
-                      );
-                    },
-                  ),
                 ),
               ),
-              
+
               // 정보
               Padding(
                 padding: const EdgeInsets.all(16.0),
@@ -284,17 +335,17 @@ class _ImageGalleryWidgetState extends State<ImageGalleryWidget> {
                           ),
                         ),
                       ),
-                      
+
                     const SizedBox(height: 12),
-                    
+
                     // 날짜
                     Text(
                       '생성일: ${_formatDate(image.createdAt)}',
                       style: Theme.of(context).textTheme.bodySmall,
                     ),
-                    
+
                     const SizedBox(height: 12),
-                    
+
                     // 프롬프트
                     const Text(
                       '프롬프트:',
@@ -320,7 +371,7 @@ class _ImageGalleryWidgetState extends State<ImageGalleryWidget> {
                   ],
                 ),
               ),
-              
+
               // 버튼
               Padding(
                 padding: const EdgeInsets.only(
@@ -337,19 +388,20 @@ class _ImageGalleryWidgetState extends State<ImageGalleryWidget> {
                     ),
                     ElevatedButton.icon(
                       onPressed: () async {
-                        final provider = Provider.of<ImageGeneratorProvider>(context, listen: false);
+                        final provider = Provider.of<ImageGeneratorProvider>(
+                            context,
+                            listen: false);
                         final success = await provider.saveImageToGallery();
-                        
+
                         if (context.mounted) {
                           Navigator.pop(context);
                           ScaffoldMessenger.of(context).showSnackBar(
                             SnackBar(
-                              content: Text(
-                                success 
-                                  ? '이미지가 기기에 저장되었습니다' 
-                                  : '이미지 저장에 실패했습니다'
-                              ),
-                              backgroundColor: success ? Colors.green : Colors.red,
+                              content: Text(success
+                                  ? '이미지가 기기에 저장되었습니다'
+                                  : '이미지 저장에 실패했습니다'),
+                              backgroundColor:
+                                  success ? Colors.green : Colors.red,
                             ),
                           );
                         }
@@ -368,7 +420,8 @@ class _ImageGalleryWidgetState extends State<ImageGalleryWidget> {
   }
 
   // 이미지 삭제 확인 다이얼로그
-  void _confirmDeleteImage(BuildContext context, String imageId, ImageGeneratorProvider provider) {
+  void _confirmDeleteImage(
+      BuildContext context, String imageId, ImageGeneratorProvider provider) {
     showDialog(
       context: context,
       builder: (BuildContext context) {
@@ -400,7 +453,8 @@ class _ImageGalleryWidgetState extends State<ImageGalleryWidget> {
   }
 
   // 갤러리 초기화 확인 다이얼로그
-  void _confirmClearGallery(BuildContext context, ImageGeneratorProvider provider) {
+  void _confirmClearGallery(
+      BuildContext context, ImageGeneratorProvider provider) {
     showDialog(
       context: context,
       builder: (BuildContext context) {
@@ -414,7 +468,7 @@ class _ImageGalleryWidgetState extends State<ImageGalleryWidget> {
             ),
             TextButton(
               onPressed: () {
-                provider.clearAllImages();
+                provider.deleteAllImages();
                 Navigator.pop(context);
                 ScaffoldMessenger.of(context).showSnackBar(
                   const SnackBar(
@@ -435,7 +489,7 @@ class _ImageGalleryWidgetState extends State<ImageGalleryWidget> {
   String _formatDate(DateTime date) {
     final now = DateTime.now();
     final difference = now.difference(date);
-    
+
     if (difference.inDays == 0) {
       if (difference.inHours == 0) {
         if (difference.inMinutes == 0) {

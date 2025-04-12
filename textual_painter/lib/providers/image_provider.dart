@@ -4,7 +4,7 @@ import '../services/image_service.dart';
 
 class ImageGeneratorProvider extends ChangeNotifier {
   final ImageService _imageService = ImageService();
-  
+
   String? _generatedImageUrl;
   String? _error;
   bool _isLoading = false;
@@ -30,13 +30,13 @@ class ImageGeneratorProvider extends ChangeNotifier {
       _setLoading(true);
       _clearError();
       _generatedImageUrl = null;
-      
+
       // API 호출 (선택된 모델 사용)
-      final imageUrl = await _imageService.generateImage(prompt, model: _selectedModel);
-      
+      final imageUrl =
+          await _imageService.generateImage(prompt, model: _selectedModel);
+
       _generatedImageUrl = imageUrl;
       notifyListeners();
-      
     } catch (e) {
       _setError(e.toString());
     } finally {
@@ -47,14 +47,14 @@ class ImageGeneratorProvider extends ChangeNotifier {
   // 생성된 이미지 저장
   Future<void> saveGeneratedImage(String prompt) async {
     if (_generatedImageUrl == null) return;
-    
+
     try {
       // 이미지 URL에서 모델 정보 추출
       String model = _selectedModel;
       if (_generatedImageUrl!.contains('?model=')) {
         model = _generatedImageUrl!.split('?model=')[1];
       }
-      
+
       final newImage = GeneratedImage(
         id: DateTime.now().millisecondsSinceEpoch.toString(),
         prompt: prompt,
@@ -62,10 +62,9 @@ class ImageGeneratorProvider extends ChangeNotifier {
         model: model,
         createdAt: DateTime.now(),
       );
-      
+
       await _imageService.saveImage(newImage);
       await loadSavedImages(); // 저장 후 목록 갱신
-      
     } catch (e) {
       _setError('이미지를 저장하는 중 오류가 발생했습니다: $e');
     }
@@ -93,9 +92,9 @@ class ImageGeneratorProvider extends ChangeNotifier {
   }
 
   // 모든 이미지 삭제
-  Future<void> clearAllImages() async {
+  Future<void> deleteAllImages() async {
     try {
-      await _imageService.clearAllImages();
+      await _imageService.deleteAllImages();
       _savedImages.clear();
       notifyListeners();
     } catch (e) {
