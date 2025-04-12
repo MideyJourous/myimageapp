@@ -1,250 +1,172 @@
 import os
-import json
-import requests
-import base64
-from datetime import datetime
-from flask import Flask, request, jsonify, send_from_directory, send_file
+import sys
+import subprocess
 import webbrowser
 from threading import Timer
+from flask import Flask, jsonify, request, send_from_directory
 from flask_sqlalchemy import SQLAlchemy
+from datetime import datetime
 from sqlalchemy.sql import func
-from dotenv import load_dotenv
+import requests
+import base64
+import json
+import uuid
 
-# .env 파일 로드
-load_dotenv()
-
-app = Flask(__name__, static_folder='../build')
+app = Flask(__name__)
 
 # 데이터베이스 설정
-app.config['SQLALCHEMY_DATABASE_URI'] = os.environ.get('DATABASE_URL')
-app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+app.config["SQLALCHEMY_DATABASE_URI"] = os.environ.get("DATABASE_URL")
+app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
 db = SQLAlchemy(app)
-
 
 # 이미지 모델 정의
 class Image(db.Model):
     __tablename__ = 'images'
-
+    
     id = db.Column(db.String(50), primary_key=True)
     prompt = db.Column(db.Text, nullable=False)
     image_url = db.Column(db.String(500), nullable=False)
     model = db.Column(db.String(50), nullable=True)  # 'sdxl' 또는 'flux-schnell'
     created_at = db.Column(db.DateTime(timezone=True),
                            server_default=func.now())
-
+    
     def to_dict(self):
         return {
             'id': self.id,
             'prompt': self.prompt,
-            'imageUrl': self.image_url,
-            'model': self.model or 'sdxl',  # 없으면 기본값 'sdxl'
-            'createdAt': self.created_at.isoformat()
+            'image_url': self.image_url,
+            'model': self.model,
+            'created_at': self.created_at.isoformat(),
         }
-
 
 # 데이터베이스 테이블 생성
 with app.app_context():
     db.create_all()
 
-# TheHive.AI API 키 설정
-THEHIVE_API_KEY = os.environ.get('THEHIVE_API_KEY')
-
-# TheHive.AI API 설정 - v3 API 사용
-THEHIVE_API_URL = "https://api.thehive.ai/api/v3/hive/sdxl-enhanced"
-THEHIVE_FLUX_API_URL = "https://api.thehive.ai/api/v3/hive/flux-schnell-enhanced"
-
-
-# 이미지 데이터 저장 및 불러오기 함수
+# 이미지 목록 불러오기
 def load_images():
     images = Image.query.order_by(Image.created_at.desc()).all()
     return [image.to_dict() for image in images]
 
-
+# 이미지 저장
 def save_image(image_data):
-    image = Image(
-        id=image_data['id'],
-        prompt=image_data['prompt'],
-        image_url=image_data['imageUrl'],
-        model=image_data.get('model', 'sdxl')  # 모델 정보 저장 (기본값: sdxl)
+    new_image = Image(
+        id=image_data.get('id') or str(uuid.uuid4()),
+        prompt=image_data.get('prompt', ''),
+        image_url=image_data.get('image_url', ''),
+        model=image_data.get('model', 'sdxl'),
     )
-    db.session.add(image)
+    db.session.add(new_image)
     db.session.commit()
-    return image.to_dict()
+    return new_image.to_dict()
 
-
-# 한국어 프롬프트를 영어로 간단히 번역하는 함수
+# 한국어 프롬프트를 영어로 번역
 def translate_prompt_to_english(korean_prompt):
-    # 한국어 프롬프트에서 자주 사용되는 키워드 매핑
-    translation_map = {
-        "지브리 스타일": "Studio Ghibli style",
-        "갈색머리": "brown hair",
-        "단발": "short hair",
-        "소녀": "girl",
-        "그녀가 안고 있는": "holding",
-        "턱시도 고양이": "tuxedo cat",
-        "고양이": "cat"
-    }
-    
-    # 번역된 프롬프트 초기화
-    english_prompt = korean_prompt
-    
-    # 키워드 매핑을 사용하여 번역
-    for korean, english in translation_map.items():
-        if korean in korean_prompt:
-            english_prompt = english_prompt.replace(korean, english)
-    
-    # 최종 번역 문자열 출력
-    print(f"원본 프롬프트: '{korean_prompt}'")
-    print(f"번역된 프롬프트: '{english_prompt}'")
-    
-    # 한국어가 그대로 포함된 경우 영어 설명 추가
-    if any(ord(char) > 127 for char in english_prompt):
-        # 원본 프롬프트를 보존하면서 기본 영어 설명 추가
-        english_prompt = f"{english_prompt}, Studio Ghibli style illustration of a girl with brown short hair holding a tuxedo cat"
-        print(f"최종 프롬프트: '{english_prompt}'")
-    
-    return english_prompt
+    try:
+        # 간단한 번역 API 사용 (실제로는 번역 서비스 사용 필요)
+        response = requests.post(
+            "https://translation.googleapis.com/language/translate/v2",
+            params={"key": os.environ.get("GOOGLE_API_KEY", "")},
+            data={
+                "q": korean_prompt,
+                "source": "ko",
+                "target": "en",
+                "format": "text"
+            }
+        )
+        
+        if response.status_code == 200:
+            translated_text = response.json()["data"]["translations"][0]["translatedText"]
+            return translated_text
+        else:
+            return korean_prompt
+    except Exception as e:
+        print(f"번역 오류: {e}")
+        return korean_prompt
 
-# TheHive.AI API를 사용하여 이미지 생성
+# TheHive AI를 사용한 이미지 생성
 def generate_image_with_thehive(prompt, model="sdxl"):
     try:
-        print(f"Using TheHive.AI API for image generation with model: {model}")
+        thehive_api_key = os.environ.get("THEHIVE_API_KEY")
         
-        # 한국어 프롬프트를 영어로 번역
-        english_prompt = translate_prompt_to_english(prompt)
-
-        # API 요청 헤더 설정 - Bearer 인증 방식 사용
-        headers = {
-            "authorization": f"Bearer {THEHIVE_API_KEY}",
-            "Content-Type": "application/json"
-        }
-
-        # 모델 선택 및 API 엔드포인트 결정
-        api_url = THEHIVE_API_URL
+        if not thehive_api_key:
+            return jsonify({"error": "TheHive API 키가 설정되지 않았습니다."}), 500
         
-        # 새로운 API v3 형식에 맞게 요청 데이터 구성
-        if model.lower() == "flux-schnell":
-            api_url = THEHIVE_FLUX_API_URL
-            # Flux Schnell 모델은 guidance_scale 파라미터가 없음
-            data = {
-                "input": {
-                    "prompt": english_prompt,
-                    "image_size": {"width": 1024, "height": 1024},
-                    "num_inference_steps": 15,
-                    "num_images": 1,
-                    "output_format": "png"
-                }
+        # 모델에 따라 엔드포인트 선택
+        if model == "sdxl":
+            api_url = "https://api.thehive.ai/api/v3/text-to-image/tasks/sdxl-enhanced"
+            payload = {
+                "prompt": prompt,
+                "samples": 1,
+                "negative_prompt": "low quality, bad anatomy, worst quality, low resolution",
+                "seed": -1,
+                "steps": 20,
+                "cfg_scale": 7.5,
             }
         else:
-            # SDXL 모델
-            data = {
-                "input": {
-                    "prompt": english_prompt,
-                    "negative_prompt": "",
-                    "image_size": {"width": 1024, "height": 1024},
-                    "num_inference_steps": 15,
-                    "guidance_scale": 3.5,
-                    "num_images": 1,
-                    "output_format": "png"
-                }
+            api_url = "https://api.thehive.ai/api/v3/text-to-image/tasks/flux-schnell-enhanced"
+            payload = {
+                "prompt": prompt,
+                "samples": 1,
+                "guidance_scale": 8.0,
+                "negative_prompt": "low quality, bad anatomy, worst quality, low resolution",
             }
-
+        
         # API 요청
-        response = requests.post(api_url, headers=headers, json=data)
-
-        # 상태 코드 확인
-        if response.status_code != 200:
-            error_message = f"TheHive.AI API Error: {response.status_code} - {response.text}"
-            print(error_message)
-            return None, error_message, response.status_code
-
-        # 응답 파싱
-        result = response.json()
-        print(f"API 응답: {result}")
-
-        # 이미지 URL 또는 데이터 추출
-        try:
-            # v3 API 응답 형식에 맞게 파싱
-            if "output" in result:
-                outputs = result["output"]
-                if isinstance(outputs, list) and len(outputs) > 0:
-                    # base64 이미지 데이터를 URL 형식으로 변환
-                    if "image_b64" in outputs[0]:
-                        image_url = f"data:image/png;base64,{outputs[0]['image_b64']}"
-                        return image_url, None, 200
-                    # URL이 있는 경우 (키가 'url'일 수도 있고 'image_url'일 수도 있음)
-                    elif "url" in outputs[0]:
-                        image_url = outputs[0]["url"]
-                        return image_url, None, 200
-                    elif "image_url" in outputs[0]:
-                        image_url = outputs[0]["image_url"]
-                        return image_url, None, 200
-
-            # 파싱 실패시 자세한 오류 메시지 반환
-            print(f"응답 파싱 실패: {result}")
-            return None, "응답에서 이미지 URL을 찾을 수 없습니다 (응답 형식 다름)", 500
-
-        except (KeyError, IndexError) as e:
-            print(f"응답 파싱 중 오류: {e}, 응답: {result}")
-            return None, f"응답에서 이미지 URL을 찾을 수 없습니다: {str(e)}", 500
-
+        response = requests.post(
+            api_url,
+            headers={
+                "Authorization": f"Bearer {thehive_api_key}",
+                "Content-Type": "application/json"
+            },
+            json=payload
+        )
+        
+        if response.status_code == 200:
+            data = response.json()
+            
+            if data.get("status") == "success" and data.get("output"):
+                image_data = data["output"][0]["result"]["data"]
+                return {"image": image_data, "status": "success", "model": model}
+            else:
+                return {"error": "이미지 생성 결과가 유효하지 않습니다.", "data": data}
+        else:
+            return {"error": f"API 요청 오류: {response.status_code} - {response.text}"}
+    
     except Exception as e:
-        error_message = f"TheHive.AI API 호출 중 오류: {str(e)}"
-        print(error_message)
-        return None, error_message, 500
+        return {"error": f"이미지 생성 중 오류가 발생했습니다: {str(e)}"}
 
-
-# API 라우트
+# API 엔드포인트
 @app.route('/api/generate-image', methods=['POST'])
 def generate_image():
     try:
-        data = request.json
+        data = request.get_json()
         prompt = data.get('prompt', '')
-
-        # 클라이언트에서 전송한 모델 정보 수신 (기본값: sdxl)
-        selected_model = data.get('model', 'sdxl')
-
-        # 허용된 모델 확인 (sdxl 또는 flux-schnell만 허용)
-        if selected_model not in ['sdxl', 'flux-schnell']:
-            selected_model = 'sdxl'  # 유효하지 않으면 기본값 사용
-
+        model = data.get('model', 'sdxl')
+        
         if not prompt:
-            return jsonify({"error": "텍스트 설명이 필요합니다"}), 400
-
-        # TheHive.AI API를 사용하여 이미지 생성
-        try:
-            print(
-                f"Generating image with model: {selected_model}, prompt: '{prompt}'"
-            )
-
-            # TheHive.AI API로 이미지 생성
-            image_url, error, status_code = generate_image_with_thehive(
-                prompt, selected_model)
-
-            if error:
-                return jsonify({"error": error}), status_code
-
-            return jsonify({"url": image_url})
-
-        except Exception as api_err:
-            # API 특정 오류 처리
-            error_message = str(api_err)
-            error_code = 500
-
-            print(f"TheHive.AI API Error: {error_message}")
-            return jsonify({
-                "error": error_message,
-                "detail": str(api_err)
-            }), error_code
-
-    except Exception as e:
-        print(f"Error generating image: {e}")
+            return jsonify({"error": "프롬프트를 입력해주세요."}), 400
+        
+        # 한국어인 경우 영어로 번역 (실제 번역은 Flutter 앱에서 처리)
+        # english_prompt = translate_prompt_to_english(prompt) 
+        
+        # TheHive API로 이미지 생성
+        result = generate_image_with_thehive(prompt, model)
+        
+        if "error" in result:
+            return jsonify({"error": result["error"]}), 500
+        
+        # Base64 이미지 데이터 반환
         return jsonify({
-            "error": "이미지 생성 중 오류가 발생했습니다. 잠시 후 다시 시도해주세요.",
-            "detail": str(e)
-        }), 500
+            "image": result["image"],
+            "model": result["model"],
+            "prompt": prompt
+        })
+    
+    except Exception as e:
+        return jsonify({"error": f"요청 처리 중 오류가 발생했습니다: {str(e)}"}), 500
 
-
+# 이미지 목록 가져오기
 @app.route('/api/images', methods=['GET'])
 def get_images():
     try:
@@ -253,80 +175,58 @@ def get_images():
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
-
+# 이미지 저장 API
 @app.route('/api/images', methods=['POST'])
 def save_image_api():
     try:
-        data = request.json
-        prompt = data.get('prompt', '')
-        url = data.get('url', '')
-        model = data.get('model', 'sdxl')  # 모델 정보 가져오기
-
-        if not url or not prompt:
-            return jsonify({"error": "URL과 설명이 필요합니다"}), 400
-
-        image_id = str(int(datetime.now().timestamp() * 1000))
-
-        new_image = {
-            "id": image_id,
-            "prompt": prompt,
-            "imageUrl": url,
-            "model": model,  # 모델 정보 추가
-            "createdAt": datetime.now().isoformat()
-        }
-
-        # 데이터베이스에 저장
-        saved_image = save_image(new_image)
-
-        return jsonify(saved_image)
+        image_data = request.get_json()
+        result = save_image(image_data)
+        return jsonify(result)
     except Exception as e:
-        print(f"Error saving image: {e}")
         return jsonify({"error": str(e)}), 500
 
-
+# 이미지 삭제 API
 @app.route('/api/images/<image_id>', methods=['DELETE'])
 def delete_image(image_id):
     try:
-        # 데이터베이스에서 이미지 삭제
         image = Image.query.get(image_id)
         if image:
             db.session.delete(image)
             db.session.commit()
             return jsonify({"success": True})
         else:
-            return jsonify({"error": "이미지를 찾을 수 없습니다"}), 404
+            return jsonify({"error": "이미지를 찾을 수 없습니다."}), 404
     except Exception as e:
-        print(f"Error deleting image: {e}")
         return jsonify({"error": str(e)}), 500
 
-
+# 모든 이미지 삭제 API
 @app.route('/api/images/clear', methods=['DELETE'])
 def clear_images():
     try:
-        # 모든 이미지 삭제
-        db.session.query(Image).delete()
+        Image.query.delete()
         db.session.commit()
         return jsonify({"success": True})
     except Exception as e:
-        print(f"Error clearing images: {e}")
         return jsonify({"error": str(e)}), 500
 
-
-# React 앱 서빙
-@app.route('/', defaults={'path': ''})
+# 정적 파일 서빙 (웹 버전용)
 @app.route('/<path:path>')
 def serve(path):
-    if path and os.path.exists(os.path.join(app.static_folder, path)):
-        return send_from_directory(app.static_folder, path)
-    return send_file(os.path.join(app.static_folder, 'index.html'))
+    import os
+    web_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', 'web_version')
+    return send_from_directory(web_dir, path)
 
+@app.route('/')
+def index():
+    import os
+    web_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', 'web_version')
+    return send_from_directory(web_dir, 'index.html')
 
+# 브라우저 자동 열기
 def open_browser():
     webbrowser.open('http://localhost:5000')
 
-
+# 메인 실행
 if __name__ == '__main__':
-    # 브라우저 자동 열기
     Timer(1, open_browser).start()
-    # 서버 시작
     app.run(host='0.0.0.0', port=5000, debug=True)

@@ -27,8 +27,13 @@ class _ImageGeneratorWidgetState extends State<ImageGeneratorWidget> {
     // 지연 설정해서 빌드 컨텍스트 사용
     WidgetsBinding.instance.addPostFrameCallback((_) {
       final themeProvider = Provider.of<ThemeProvider>(context, listen: false);
+      // 초기화 처리
+      themeProvider.initialize();
+      
       // 초기 프롬프트 설정
-      _promptController.text = themeProvider.currentPrompt;
+      setState(() {
+        _promptController.text = themeProvider.currentPrompt;
+      });
     });
   }
 
