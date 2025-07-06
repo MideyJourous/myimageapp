@@ -1,6 +1,6 @@
 import 'dart:convert';
 import 'package:shared_preferences/shared_preferences.dart';
-import '../models/image_model.dart';
+import '../services/image_service.dart';
 
 class StorageService {
   static const String _storageKey = 'generated_images';
@@ -9,10 +9,10 @@ class StorageService {
   Future<void> saveGeneratedImage(GeneratedImage image) async {
     final prefs = await SharedPreferences.getInstance();
     final imagesJson = prefs.getStringList(_storageKey) ?? [];
-    
+
     // 새 이미지를 리스트의 맨 앞에 추가
-    imagesJson.insert(0, jsonEncode(image.toJson()));
-    
+    imagesJson.insert(0, jsonEncode(image.toMap()));
+
     // 저장소에 업데이트된 리스트 저장
     await prefs.setStringList(_storageKey, imagesJson);
   }
@@ -21,10 +21,10 @@ class StorageService {
   Future<List<GeneratedImage>> getAllImages() async {
     final prefs = await SharedPreferences.getInstance();
     final imagesJson = prefs.getStringList(_storageKey) ?? [];
-    
+
     return imagesJson.map((jsonString) {
       final Map<String, dynamic> json = jsonDecode(jsonString);
-      return GeneratedImage.fromJson(json);
+      return GeneratedImage.fromMap(json);
     }).toList();
   }
 
@@ -32,13 +32,13 @@ class StorageService {
   Future<void> deleteImage(String id) async {
     final prefs = await SharedPreferences.getInstance();
     final imagesJson = prefs.getStringList(_storageKey) ?? [];
-    
+
     // ID에 해당하는 이미지 필터링
     final filteredImages = imagesJson.where((jsonString) {
       final Map<String, dynamic> json = jsonDecode(jsonString);
       return json['id'] != id;
     }).toList();
-    
+
     // 저장소에 업데이트된 리스트 저장
     await prefs.setStringList(_storageKey, filteredImages);
   }

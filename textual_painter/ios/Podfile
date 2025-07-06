@@ -1,5 +1,5 @@
 # Uncomment this line to define a global platform for your project
-# platform :ios, '12.0'
+platform :ios, '13.0'
 
 # CocoaPods analytics sends network stats synchronously affecting flutter build latency.
 ENV['COCOAPODS_DISABLE_STATS'] = 'true'
@@ -31,6 +31,8 @@ target 'Runner' do
   use_frameworks!
 
   flutter_install_all_ios_pods File.dirname(File.realpath(__FILE__))
+  
+  
   target 'RunnerTests' do
     inherit! :search_paths
   end
@@ -39,5 +41,48 @@ end
 post_install do |installer|
   installer.pods_project.targets.each do |target|
     flutter_additional_ios_build_settings(target)
+  end
+
+  # Xcode 16 대응 - BoringSSL-GRPC 오류 수정
+  installer.pods_project.targets.each do |target|
+    if target.name == 'BoringSSL-GRPC'
+      target.source_build_phase.files.each do |file|
+        if file.settings && file.settings['COMPILER_FLAGS']
+          flags = file.settings['COMPILER_FLAGS'].split
+          flags.reject! { |flag| flag == '-GCC_WARN_INHIBIT_ALL_WARNINGS' }
+          file.settings['COMPILER_FLAGS'] = flags.join(' ')
+        end
+      end
+    end
+  end
+
+  # RevenueCat 최신 버전은 iOS 18.4 호환성 문제가 해결됨
+
+  # gRPC-Core 템플릿 오류 해결 (Xcode 16.3 대응)
+  installer.pods_project.targets.each do |target|
+    if ['gRPC-Core', 'gRPC-C++'].include?(target.name)
+      target.build_configurations.each do |config|
+        config.build_settings['GCC_PREPROCESSOR_DEFINITIONS'] ||= ['$(inherited)']
+        config.build_settings['GCC_PREPROCESSOR_DEFINITIONS'] << 'GRPC_CFSTREAM=1'
+        config.build_settings['CLANG_WARN_DOCUMENTATION_COMMENTS'] = 'NO'
+        # C++ 표준 설정
+        config.build_settings['CLANG_CXX_LANGUAGE_STANDARD'] = 'c++17'
+        config.build_settings['CLANG_CXX_LIBRARY'] = 'libc++'
+        # 템플릿 오류 해결을 위한 추가 설정
+        config.build_settings['GCC_WARN_INHIBIT_ALL_WARNINGS'] = 'YES'
+        config.build_settings['CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER'] = 'NO'
+        # Xcode 16.3 대응 추가 컴파일러 플래그
+        config.build_settings['GCC_PREPROCESSOR_DEFINITIONS'] << 'GRPC_CFSTREAM_ENABLED=1'
+        config.build_settings['GCC_PREPROCESSOR_DEFINITIONS'] << 'GRPC_CFSTREAM_ENABLED=1'
+        # 경고 억제 (Xcode 16.3 대응)
+        config.build_settings['WARNING_CFLAGS'] = '-Wno-shorten-64-to-32 -Wno-comma -Wno-unreachable-code -Wno-conditional-uninitialized -Wno-deprecated-declarations'
+        config.build_settings['WARNING_CFLAGS'] += ' -Wno-cast-align -Wno-unused-variable -Wno-unused-function'
+        # Xcode 16.3 템플릿 오류 해결
+        config.build_settings['GCC_PREPROCESSOR_DEFINITIONS'] << 'GRPC_CFSTREAM_ENABLED=1'
+        config.build_settings['GCC_PREPROCESSOR_DEFINITIONS'] << 'GRPC_CFSTREAM_ENABLED=1'
+        # 추가 C++ 컴파일러 플래그
+        config.build_settings['OTHER_CPLUSPLUSFLAGS'] = '-std=c++17 -stdlib=libc++'
+      end
+    end
   end
 end

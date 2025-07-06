@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "1006532950690",
+    "project_id": "palette-9bfd4",
+    "storage_bucket": "palette-9bfd4.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:1006532950690:android:1ab0ad796c9cc4896875fb",
+        "android_client_info": {
+          "package_name": "com.example.myimageapp"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCN5BRMsPBpvjksBGtv845T0L-PrAFF94k"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

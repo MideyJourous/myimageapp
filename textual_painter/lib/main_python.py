@@ -90,27 +90,24 @@ def generate_image_with_thehive(prompt, model="sdxl"):
         thehive_api_key = os.environ.get("THEHIVE_API_KEY")
         
         if not thehive_api_key:
-            return jsonify({"error": "TheHive API 키가 설정되지 않았습니다."}), 500
+            print("API 키 오류: API 키가 설정되지 않았습니다.")
+            return {"error": "TheHive API 키가 설정되지 않았습니다."}
         
-        # 모델에 따라 엔드포인트 선택
-        if model == "sdxl":
-            api_url = "https://api.thehive.ai/api/v3/text-to-image/tasks/sdxl-enhanced"
+        # SDXL API 요청
+        api_url = "https://api.thehive.ai/api/v2/stability/text-to-image"
             payload = {
                 "prompt": prompt,
-                "samples": 1,
-                "negative_prompt": "low quality, bad anatomy, worst quality, low resolution",
-                "seed": -1,
-                "steps": 20,
-                "cfg_scale": 7.5,
-            }
-        else:
-            api_url = "https://api.thehive.ai/api/v3/text-to-image/tasks/flux-schnell-enhanced"
-            payload = {
-                "prompt": prompt,
-                "samples": 1,
-                "guidance_scale": 8.0,
-                "negative_prompt": "low quality, bad anatomy, worst quality, low resolution",
-            }
+            "negative_prompt": "blurry, low quality, bad anatomy, worst quality, low resolution",
+            "width": 1024,
+            "height": 1024,
+            "steps": 15,
+            "guidance_scale": 3.5,
+            "num_images": 1,
+            "seed": -1
+        }
+        
+        print(f"API 요청 URL: {api_url}")
+        print(f"요청 페이로드: {json.dumps(payload, indent=2)}")
         
         # API 요청
         response = requests.post(
@@ -122,18 +119,30 @@ def generate_image_with_thehive(prompt, model="sdxl"):
             json=payload
         )
         
+        print(f"응답 상태 코드: {response.status_code}")
+        print(f"응답 헤더: {response.headers}")
+        print(f"응답 내용: {response.text}")
+        
         if response.status_code == 200:
             data = response.json()
+            print(f"파싱된 응답 데이터: {json.dumps(data, indent=2)}")
             
-            if data.get("status") == "success" and data.get("output"):
-                image_data = data["output"][0]["result"]["data"]
+            if "images" in data and len(data["images"]) > 0:
+                image_data = data["images"][0]
+                if image_data:
                 return {"image": image_data, "status": "success", "model": model}
+                else:
+                    print("이미지 데이터를 찾을 수 없음")
+                    return {"error": "응답에서 이미지 데이터를 찾을 수 없습니다.", "data": data}
             else:
+                print("유효하지 않은 응답 구조")
                 return {"error": "이미지 생성 결과가 유효하지 않습니다.", "data": data}
         else:
+            print(f"API 오류 응답: {response.status_code} - {response.text}")
             return {"error": f"API 요청 오류: {response.status_code} - {response.text}"}
     
     except Exception as e:
+        print(f"예외 발생: {str(e)}")
         return {"error": f"이미지 생성 중 오류가 발생했습니다: {str(e)}"}
 
 # API 엔드포인트
@@ -145,18 +154,18 @@ def generate_image():
         model = data.get('model', 'sdxl')
         
         if not prompt:
-            return jsonify({"error": "프롬프트를 입력해주세요."}), 400
+            return jsonify({"error": "Please enter a prompt."}), 400
         
-        # 한국어인 경우 영어로 번역 (실제 번역은 Flutter 앱에서 처리)
+        # Translate to English if in Korean (translation is handled in Flutter app)
         # english_prompt = translate_prompt_to_english(prompt) 
         
-        # TheHive API로 이미지 생성
+        # Generate image with TheHive API
         result = generate_image_with_thehive(prompt, model)
         
         if "error" in result:
             return jsonify({"error": result["error"]}), 500
         
-        # Base64 이미지 데이터 반환
+        # Return Base64 image data
         return jsonify({
             "image": result["image"],
             "model": result["model"],
@@ -164,7 +173,7 @@ def generate_image():
         })
     
     except Exception as e:
-        return jsonify({"error": f"요청 처리 중 오류가 발생했습니다: {str(e)}"}), 500
+        return jsonify({"error": f"An error occurred while processing the request: {str(e)}"}), 500
 
 # 이미지 목록 가져오기
 @app.route('/api/images', methods=['GET'])

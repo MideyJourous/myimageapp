@@ -1,7 +1,7 @@
 name: textual_painter
-description: AI 기반 텍스트-이미지 생성 앱
+description: AI-powered text-to-image generation app
 
-# 앱 버전 및 빌드 번호
+# App version and build number
 version: 1.0.0+1
 
 environment:
@@ -17,6 +17,12 @@ dependencies:
   cupertino_icons: ^1.0.5
   flutter_spinkit: ^5.2.0
   
+  # Firebase (임시로 주석 처리 - Xcode 16.3 gRPC 오류 해결 후 재활성화)
+  # firebase_core: ^2.14.0
+  # cloud_firestore: ^4.7.1
+  # firebase_auth: ^4.6.3
+  # firebase_storage: ^11.1.2
+  
   # 상태 관리
   provider: ^6.0.5
   
@@ -25,7 +31,7 @@ dependencies:
   dio: ^5.3.2
   
   # 데이터 저장 및 로컬 스토리지
-  shared_preferences: ^2.2.0
+  shared_preferences: ^2.2.2
   path_provider: ^2.0.15
   
   # 이미지 관련
@@ -36,6 +42,12 @@ dependencies:
   
   # 언어 번역
   translator: ^1.0.3+1
+  
+  # 추가된 의존성
+  url_launcher: ^6.0.20
+  
+  # RevenueCat SDK (iOS 18.4 호환성을 위해 최신 버전 사용)
+  purchases_flutter: ^8.5.2
 
 dev_dependencies:
   flutter_test:
@@ -50,6 +62,11 @@ flutter:
     - .env
     - assets/
     - assets/themes/
+    
+  fonts:
+    - family: Inter
+      fonts:
+        - asset: assets/fonts/Inter-VariableFont_opsz,wght.ttf
     
   # 테마 카드용 더미 이미지 생성
   generate: true

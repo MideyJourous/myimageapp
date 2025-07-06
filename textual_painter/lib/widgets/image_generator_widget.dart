@@ -5,6 +5,7 @@ import 'package:flutter_spinkit/flutter_spinkit.dart';
 import '../providers/image_provider.dart';
 import '../providers/theme_provider.dart';
 import '../widgets/rotating_theme_cards.dart';
+import 'pro_ask_mocal.dart';
 
 class ImageGeneratorWidget extends StatefulWidget {
   const ImageGeneratorWidget({Key? key}) : super(key: key);
@@ -14,14 +15,17 @@ class ImageGeneratorWidget extends StatefulWidget {
 }
 
 class _ImageGeneratorWidgetState extends State<ImageGeneratorWidget> {
-  final TextEditingController _promptController = TextEditingController();
   final _formKey = GlobalKey<FormState>();
-  final int _maxPromptLength = 1000;
+  final int _maxPromptLength = 400;
   bool _isSaved = false;
+  String _selectedCardPrompt = '';
+  String _userInput = '';
+  late TextEditingController _textController;
 
   @override
   void initState() {
     super.initState();
+    _textController = TextEditingController();
 
     // 지연 설정해서 빌드 컨텍스트 사용
     WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -29,16 +33,28 @@ class _ImageGeneratorWidgetState extends State<ImageGeneratorWidget> {
       // 초기화 처리
       themeProvider.initialize();
 
-      // 초기 프롬프트 설정
-      setState(() {
-        _promptController.text = themeProvider.currentPrompt;
-      });
+      // 첫 번째 카드를 선택하고 프롬프트 저장
+      if (themeProvider.themeCards.isNotEmpty) {
+        setState(() {
+          _selectedCardPrompt = themeProvider.themeCards.first.prompt;
+          // 텍스트 입력창은 비워두고 사용자 입력만 받음
+          _textController.text = '';
+          _userInput = '';
+
+          // 커서를 텍스트 시작으로 이동
+          _textController.selection = TextSelection.fromPosition(
+            TextPosition(offset: 0),
+          );
+
+          themeProvider.setCustomPrompt(_selectedCardPrompt);
+        });
+      }
     });
   }
 
   @override
   void dispose() {
-    _promptController.dispose();
+    _textController.dispose();
     super.dispose();
   }
 
@@ -54,6 +70,7 @@ class _ImageGeneratorWidgetState extends State<ImageGeneratorWidget> {
               title: card.title,
               imagePath: card.imagePath,
               prompt: card.prompt,
+              isPro: card.isPro,
             ))
         .toList();
 
@@ -66,146 +83,169 @@ class _ImageGeneratorWidgetState extends State<ImageGeneratorWidget> {
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               // 테마 카드 회전 위젯
+              Text(
+                'Select a theme',
+                style: theme.textTheme.titleLarge,
+                textAlign: TextAlign.left,
+              ),
               SizedBox(
-                height: 520, // 카드 높이 + 여백
+                height: 530,
                 child: RotatingThemeCards(
                   cards: themeCards,
                   onCardSelected: (selectedCard) {
-                    // 선택된 카드로 프롬프트 업데이트
                     setState(() {
-                      _promptController.text = selectedCard.prompt;
+                      _selectedCardPrompt = selectedCard.prompt;
+                      // 카드 선택 시 텍스트 입력창은 비우고, 사용자 입력만 받음
+                      _textController.text = '';
+                      _userInput = '';
+
+                      // 커서를 텍스트 시작으로 이동
+                      _textController.selection = TextSelection.fromPosition(
+                        TextPosition(offset: 0),
+                      );
+
+                      // ThemeProvider에는 선택된 카드의 프롬프트만 저장
                       themeProvider.setCustomPrompt(selectedCard.prompt);
                     });
+                  },
+                  isPro: false,
+                  onProCardSelected: () {
+                    ProAskModal.show(context);
                   },
                 ),
               ),
 
-              const SizedBox(height: 20),
-
-              // 이미지 모델 선택 (드롭다운)
-              DropdownButtonFormField<String>(
-                decoration: const InputDecoration(
-                  labelText: '이미지 모델',
-                  border: OutlineInputBorder(),
-                  contentPadding:
-                      EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                ),
-                value: imageProvider.selectedModel, // 현재 선택된 모델
-                items: const [
-                  DropdownMenuItem(value: 'sdxl', child: Text('SDXL')),
-                  DropdownMenuItem(
-                      value: 'flux-schnell', child: Text('Flux Schnell')),
-                ],
-                onChanged: (value) {
-                  if (value != null) {
-                    imageProvider.setSelectedModel(value);
-                  }
-                },
-              ),
-
-              const SizedBox(height: 20),
+              const SizedBox(height: 4),
 
               // Prompt Text Field
               TextFormField(
-                controller: _promptController,
+                controller: _textController, // 추가: controller 연결
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontSize: 14,
+                ),
                 decoration: InputDecoration(
-                  labelText: '이미지 설명',
-                  hintText: '만들고 싶은 이미지를 자세히 설명해주세요...',
-                  counterText:
-                      '${_promptController.text.length}/$_maxPromptLength',
-                  prefixIcon: const Icon(Icons.description),
-                  border: const OutlineInputBorder(),
+                  hintText: 'Add your description (optional):',
+                  hintStyle:
+                      TextStyle(fontSize: 13, color: Colors.grey.shade600),
+                  counterText: '',
+                  contentPadding: const EdgeInsets.symmetric(
+                    horizontal: 12,
+                    vertical: 8,
+                  ),
+                  suffixIcon: IconButton(
+                    icon: imageProvider.isLoading
+                        ? SizedBox(
+                            width: 20,
+                            height: 20,
+                            child: CircularProgressIndicator(
+                              strokeWidth: 2,
+                              valueColor: AlwaysStoppedAnimation<Color>(
+                                Theme.of(context).colorScheme.onPrimary,
+                              ),
+                            ),
+                          )
+                        : const Icon(Icons.send),
+                    onPressed: imageProvider.isLoading
+                        ? null
+                        : () async {
+                            if (_formKey.currentState!.validate()) {
+                              setState(() {
+                                _isSaved = false;
+                              });
+                              // 사용자 입력과 카드 프롬프트를 결합하여 API 요청
+                              final combinedPrompt = _userInput.isNotEmpty
+                                  ? '$_selectedCardPrompt\n$_userInput'
+                                  : _selectedCardPrompt;
+                              await imageProvider.generateImage(combinedPrompt);
+
+                              // 무료 사용자가 이미지를 생성한 후 Pro 모달 표시
+                              if (!imageProvider.isPro &&
+                                  imageProvider.dailyGenerationCount >= 1 &&
+                                  context.mounted) {
+                                ProAskModal.show(context);
+                              }
+                            }
+                          },
+                  ),
                 ),
                 maxLength: _maxPromptLength,
                 maxLines: 4,
                 validator: (value) {
                   if (value == null || value.trim().isEmpty) {
-                    return '이미지 설명을 입력해주세요';
+                    return 'Please enter your image description';
                   }
                   return null;
                 },
                 onChanged: (value) {
                   setState(() {
-                    // 사용자 지정 프롬프트를 테마 Provider에 저장
-                    themeProvider.setCustomPrompt(value);
+                    _userInput = value;
+                    // 사용자 입력이 있으면 카드 프롬프트와 결합, 없으면 카드 프롬프트만 사용
+                    final combinedPrompt = value.isNotEmpty
+                        ? '$_selectedCardPrompt\n$value'
+                        : _selectedCardPrompt;
+                    themeProvider.setCustomPrompt(combinedPrompt);
                   });
                 },
               ),
 
-              const SizedBox(height: 20),
+              // Character count display
+              Padding(
+                padding: const EdgeInsets.only(top: 4.0, right: 2),
+                child: Text(
+                  '${_userInput.length}/$_maxPromptLength',
+                  style: TextStyle(
+                    color: Colors.grey.shade600,
+                    fontSize: 12,
+                  ),
+                  textAlign: TextAlign.end,
+                ),
+              ),
+
+              const SizedBox(height: 8),
 
               // Error Message
               if (imageProvider.error != null)
                 Container(
                   padding: const EdgeInsets.all(12),
                   decoration: BoxDecoration(
-                    color: Colors.red.withOpacity(0.1),
-                    borderRadius: BorderRadius.circular(8),
+                    color: Theme.of(context).colorScheme.error.withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(
+                      color:
+                          Theme.of(context).colorScheme.error.withOpacity(0.3),
+                      width: 1,
+                    ),
                   ),
                   child: Text(
                     imageProvider.error!,
-                    style: TextStyle(color: Colors.red[700]),
+                    style: TextStyle(
+                      color: Theme.of(context).colorScheme.error,
+                    ),
                   ),
                 ),
 
-              const SizedBox(height: 20),
-
-              // Generate Button
-              ElevatedButton.icon(
-                onPressed: imageProvider.isLoading
-                    ? null
-                    : () async {
-                        if (_formKey.currentState!.validate()) {
-                          setState(() {
-                            _isSaved = false;
-                          });
-
-                          await imageProvider
-                              .generateImage(_promptController.text);
-                        }
-                      },
-                icon: imageProvider.isLoading
-                    ? const SizedBox.shrink()
-                    : const Icon(Icons.image),
-                label: imageProvider.isLoading
-                    ? Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        mainAxisSize: MainAxisSize.min,
-                        children: const [
-                          SizedBox(
-                            width: 20,
-                            height: 20,
-                            child: CircularProgressIndicator(
-                              strokeWidth: 2,
-                              color: Colors.white,
-                            ),
-                          ),
-                          SizedBox(width: 10),
-                          Text('이미지 생성 중...'),
-                        ],
-                      )
-                    : const Text('이미지 생성하기'),
-                style: ElevatedButton.styleFrom(
-                  padding: const EdgeInsets.symmetric(vertical: 16),
-                  minimumSize: const Size(double.infinity, 56), // 버튼 높이 고정
-                ),
-              ),
-
-              const SizedBox(height: 20),
+              const SizedBox(height: 8),
 
               // Loading Indicator
               if (imageProvider.isLoading)
                 Column(
-                  children: const [
+                  children: [
                     SpinKitPulse(
-                      color: Colors.blue,
+                      color: Theme.of(context).colorScheme.primary,
                       size: 50.0,
                     ),
-                    SizedBox(height: 20),
+                    const SizedBox(height: 20),
                     Text(
-                      '이미지를 생성하고 있어요...\n잠시만 기다려주세요',
+                      'Creating your image...\nPlease wait a moment',
                       textAlign: TextAlign.center,
-                      style: TextStyle(fontStyle: FontStyle.italic),
+                      style: TextStyle(
+                        fontStyle: FontStyle.italic,
+                        color: Theme.of(context)
+                            .colorScheme
+                            .onBackground
+                            .withOpacity(0.7),
+                      ),
                     ),
                   ],
                 ),
@@ -217,7 +257,7 @@ class _ImageGeneratorWidgetState extends State<ImageGeneratorWidget> {
                   children: [
                     const SizedBox(height: 20),
                     Text(
-                      '생성된 이미지',
+                      'Generated Image',
                       style: theme.textTheme.titleLarge,
                       textAlign: TextAlign.center,
                     ),
@@ -242,11 +282,23 @@ class _ImageGeneratorWidgetState extends State<ImageGeneratorWidget> {
                           );
                         },
                         errorBuilder: (context, error, stackTrace) {
+                          debugPrint('Image loading error: $error');
                           return Container(
                             height: 300,
                             color: Colors.grey[200],
                             child: const Center(
-                              child: Text('이미지를 불러올 수 없습니다'),
+                              child: Column(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  Icon(
+                                    Icons.error_outline,
+                                    color: Colors.red,
+                                    size: 48,
+                                  ),
+                                  SizedBox(height: 8),
+                                  Text('Unable to load image'),
+                                ],
+                              ),
                             ),
                           );
                         },
@@ -262,19 +314,19 @@ class _ImageGeneratorWidgetState extends State<ImageGeneratorWidget> {
                               ? null
                               : () async {
                                   await imageProvider.saveGeneratedImage(
-                                      _promptController.text);
+                                      themeProvider.currentPrompt);
                                   setState(() {
                                     _isSaved = true;
                                   });
                                   ScaffoldMessenger.of(context).showSnackBar(
                                     const SnackBar(
-                                      content: Text('갤러리에 저장되었습니다'),
+                                      content: Text('Saved to gallery'),
                                       backgroundColor: Colors.green,
                                     ),
                                   );
                                 },
                           icon: const Icon(Icons.save),
-                          label: Text(_isSaved ? '저장됨' : '저장하기'),
+                          label: Text(_isSaved ? 'Saved' : 'Save'),
                           style: ElevatedButton.styleFrom(
                             backgroundColor:
                                 _isSaved ? Colors.grey : Colors.green,
@@ -289,23 +341,24 @@ class _ImageGeneratorWidgetState extends State<ImageGeneratorWidget> {
                             if (success) {
                               ScaffoldMessenger.of(context).showSnackBar(
                                 const SnackBar(
-                                  content: Text('기기에 이미지가 저장되었습니다'),
+                                  content: Text('Image saved to device'),
                                   backgroundColor: Colors.blue,
                                 ),
                               );
                             } else {
                               ScaffoldMessenger.of(context).showSnackBar(
                                 const SnackBar(
-                                  content: Text('이미지 저장에 실패했습니다'),
+                                  content: Text('Failed to save image'),
                                   backgroundColor: Colors.red,
                                 ),
                               );
                             }
                           },
                           icon: const Icon(Icons.download),
-                          label: const Text('다운로드'),
+                          label: const Text('Download'),
                           style: ElevatedButton.styleFrom(
-                            backgroundColor: Colors.blueAccent,
+                            backgroundColor:
+                                Theme.of(context).colorScheme.primary,
                           ),
                         ),
 
@@ -318,7 +371,7 @@ class _ImageGeneratorWidgetState extends State<ImageGeneratorWidget> {
                             });
                           },
                           icon: const Icon(Icons.clear),
-                          tooltip: '지우기',
+                          tooltip: 'Clear',
                         ),
                       ],
                     ),
